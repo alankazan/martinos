@@ -32,50 +32,60 @@
 
 ---
 
-## 📋 Requisitos
+## 📋 Compatibilidade
+
+| Distro | Package Manager | Status |
+|--------|----------------|--------|
+| Ubuntu 22.04+ / Debian 11+ | `apt` | ✅ Testado |
+| Arch Linux / Manjaro | `pacman` | ✅ Suportado |
+| Fedora 38+ / RHEL 9+ | `dnf` | ✅ Suportado |
+| openSUSE Leap / Tumbleweed | `zypper` | ✅ Suportado |
+
+> O instalador detecta automaticamente o package manager e instala os pacotes corretos para cada distro.
+
+### Requisitos mínimos
 
 | Componente | Mínimo |
 |------------|--------|
-| OS | Linux (Ubuntu 22.04+ / Debian 11+ / Arch recomendado) |
 | Node.js | 18+ |
 | Python | 3.10+ |
 | RAM | 1 GB |
 | Display Server | X11 ou Wayland |
 
-### Dependências opcionais (para funcionalidades extras)
+### Dependências opcionais (instaladas automaticamente)
 
-```bash
-# Controle de volume
-sudo apt install pulseaudio-utils   # pactl
-
-# Controle de mídia (play/pause/skip)
-sudo apt install playerctl
-
-# Monitor de sistema
-sudo apt install btop               # ou htop
-
-# Terminal (usado para logs Docker)
-sudo apt install alacritty          # ou xterm (fallback automático)
-
-# Screenshots
-sudo apt install scrot
-```
+| Pacote | Função | Fallback |
+|--------|--------|---------|
+| `pulseaudio-utils` / `pipewire` | Controle de volume | desabilitado |
+| `playerctl` | Controle de mídia | desabilitado |
+| `btop` | Monitor de sistema | `htop` → `top` |
+| `alacritty` | Terminal para logs | `xterm` |
+| `chromium` / `chromium-browser` | Modo kiosk | qualquer Chromium |
+| `scrot` / `gnome-screenshot` | Screenshots | desabilitado |
 
 ---
 
 ## 🚀 Instalação Rápida
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/SEU_USUARIO/martinos.git
+# Clone o repositório
+git clone https://github.com/alankazan/martinos.git
 cd martinos
 
-# 2. Execute o instalador automático
+# Dê permissão e execute o instalador
 chmod +x install.sh
 ./install.sh
 ```
 
-O instalador faz tudo automaticamente. Veja abaixo para instalação manual.
+O instalador detecta automaticamente sua distro e instala tudo que for necessário.
+
+### Opções do instalador
+
+```bash
+./install.sh              # Instala + compila (produção)
+./install.sh --autostart  # Instala + configura para iniciar com o sistema
+./install.sh --dev        # Instala sem compilar (modo desenvolvimento)
+```
 
 ---
 
