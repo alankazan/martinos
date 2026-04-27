@@ -12,7 +12,7 @@ RED='\033[0;31m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
 # --- Configuration ---
 INSTALL_PATH="/opt/martinos"
-REPO_URL="https://github.com/alankazan/medialauncher.git" # Update if needed
+REPO_URL="https://github.com/alankazan/martinos.git" # Update if needed
 AUTOSTART=true
 FORCE_INSTALL=false
 

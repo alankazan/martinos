@@ -71,7 +71,7 @@ Para instalar o **MartinsOS** em uma máquina Linux limpa (Ubuntu, Debian, Arch,
 
 ```bash
 # Método recomendado (Instala tudo e configura o autostart)
-sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/alankazan/medialauncher/main/install.sh)"
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/alankazan/martinos/main/install.sh)"
 ```
 
 ---
