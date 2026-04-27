@@ -65,27 +65,36 @@
 
 ---
 
-## 🚀 Instalação Rápida
+## 🚀 Instalação Super Rápida (Um Comando)
+
+Para instalar o **MartinsOS** em uma máquina Linux limpa (Ubuntu, Debian, Arch, Fedora ou openSUSE), basta rodar o comando abaixo como root. O script irá detectar sua distro, instalar todas as dependências, baixar o repositório em `/opt/martinos` e configurar o autostart automaticamente.
 
 ```bash
-# Clone o repositório
-git clone https://github.com/alankazan/martinos.git
-cd martinos
-
-# Dê permissão e execute o instalador
-chmod +x install.sh
-./install.sh
+# Método recomendado (Instala tudo e configura o autostart)
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/alankazan/medialauncher/main/install.sh)"
 ```
 
-O instalador detecta automaticamente sua distro e instala tudo que for necessário.
+---
+
+## 🛠️ Instalação Manual / Local
+
+Se você já baixou o repositório e quer instalar localmente:
+
+```bash
+# Dê permissão de execução
+chmod +x install.sh
+
+# Execute como root
+sudo ./install.sh
+```
 
 ### Opções do instalador
 
-```bash
-./install.sh              # Instala + compila (produção)
-./install.sh --autostart  # Instala + configura para iniciar com o sistema
-./install.sh --dev        # Instala sem compilar (modo desenvolvimento)
-```
+| Opção | Descrição |
+|-------|-----------|
+| `sudo ./install.sh` | Instalação padrão com autostart (Kiosk Mode) |
+| `sudo ./install.sh --no-autostart` | Instala dependências e faz build, mas não ativa serviços |
+| `sudo ./install.sh --force` | Força a reinstalação mesmo que já exista uma pasta |
 
 ---
 
