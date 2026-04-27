@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { AppEntry, Theme, ControllerMapping } from "../types/launcher";
+import { AppEntry, Theme, ControllerMapping, UserProfile } from "../types/launcher";
 import { THEMES, DEFAULT_MAPPING } from "../constants/launcher";
 import { loadLS, saveLS } from "../utils/storage";
 
@@ -16,6 +16,8 @@ interface LauncherState {
   volLevel: number;
   volMuted: boolean;
   booted: boolean;
+  profiles: UserProfile[];
+  activeProfileId: string | null;
 
   // Actions
   setBooted: (val: boolean) => void;
@@ -30,6 +32,9 @@ interface LauncherState {
   updateApp: (updatedApp: AppEntry) => void;
   addApp: (newApp: AppEntry) => void;
   removeApp: (appId: string) => void;
+  setProfiles: (p: UserProfile[]) => void;
+  setActiveProfile: (id: string) => void;
+  addProfile: (p: UserProfile) => void;
 }
 
 export const useLauncherStore = create<LauncherState>((set) => ({
@@ -45,6 +50,8 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   volLevel: 0,
   volMuted: false,
   booted: false,
+  profiles: loadLS("ml_profiles", []),
+  activeProfileId: loadLS("ml_active_profile", null),
 
   setBooted: (val) => set({ booted: val }),
 
@@ -82,5 +89,18 @@ export const useLauncherStore = create<LauncherState>((set) => ({
     const nextApps = state.apps.filter(a => a.id !== appId);
     saveLS("ml_apps", nextApps);
     return { apps: nextApps };
+  }),
+  setProfiles: (p) => {
+    saveLS("ml_profiles", p);
+    set({ profiles: p });
+  },
+  setActiveProfile: (id) => {
+    saveLS("ml_active_profile", id);
+    set({ activeProfileId: id });
+  },
+  addProfile: (p) => set((state) => {
+    const next = [...state.profiles, p];
+    saveLS("ml_profiles", next);
+    return { profiles: next };
   }),
 }));

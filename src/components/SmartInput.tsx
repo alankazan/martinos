@@ -55,8 +55,8 @@ export const SmartInput: React.FC<SmartInputProps> = ({ value, onChange, placeho
           readOnly
           value={value}
           placeholder={placeholder}
-          onClick={() => setOpen(true)}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           style={{
             background: theme.card,
             border: `1.5px solid ${open ? theme.accent : theme.border}`,
@@ -77,14 +77,14 @@ export const SmartInput: React.FC<SmartInputProps> = ({ value, onChange, placeho
           }}>✕</button>
         )}
       </div>
-      {open && (
-        <VirtualKeyboard
-          value={value}
-          onChange={onChange}
-          onClose={() => { setOpen(false); ref.current?.blur(); }}
-          placeholder={placeholder}
-        />
-      )}
+      <VirtualKeyboard
+        isOpen={open}
+        value={value}
+        onInput={(char) => onChange(value + char)}
+        onBackspace={() => onChange(value.slice(0, -1))}
+        onEnter={() => { setOpen(false); ref.current?.blur(); }}
+        onClose={() => { setOpen(false); ref.current?.blur(); }}
+      />
     </>
   );
 };

@@ -287,6 +287,42 @@ def apply_update():
         return jsonify({'error': str(e)}), 500
 
 
+# ── Store System (Flatpak) ────────────────────────────────────────
+@app.route('/api/store/search')
+def store_search():
+    query = request.args.get('q', '')
+    if not query: return jsonify([])
+    
+    # Busca remota no Flathub
+    r = run(f'flatpak search --columns=application,name,description,version {query}')
+    if not r or not r.stdout: return jsonify([])
+    
+    lines = r.stdout.strip().split('\n')
+    results = []
+    for line in lines:
+        parts = line.split('\t')
+        if len(parts) >= 3:
+            results.append({
+                'id': parts[0].strip(),
+                'name': parts[1].strip(),
+                'description': parts[2].strip(),
+                'version': parts[3].strip() if len(parts) > 3 else '',
+                'source': 'flatpak'
+            })
+    return jsonify(results)
+
+@app.route('/api/store/install', methods=['POST'])
+def store_install():
+    app_id = (request.json or {}).get('id')
+    if not app_id: return jsonify({'error': 'no id'}), 400
+    
+    # Instala sem perguntar (-y)
+    r = run(f'flatpak install -y flathub {app_id}')
+    if r.returncode != 0:
+        return jsonify({'error': 'Install failed', 'details': r.stderr}), 500
+    return jsonify({'ok': True})
+
+
 # ── Screenshot ────────────────────────────────────────────────────
 @app.route('/api/screenshot', methods=['POST'])
 def screenshot():

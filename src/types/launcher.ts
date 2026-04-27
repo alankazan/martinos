@@ -79,3 +79,11 @@ export type ContainerNotifEvent = {
   icon: string;
   running: boolean;
 };
+
+export type UserProfile = {
+  id: string;
+  name: string;
+  avatar: string;
+  pin?: string;
+  theme?: string;
+};

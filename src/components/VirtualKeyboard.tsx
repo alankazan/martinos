@@ -1,104 +1,143 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Delete, Space, CornerDownLeft, Type, ArrowUp } from "lucide-react";
 import { useLauncherStore } from "../store/useLauncherStore";
 
-const KB_ROWS = {
-  lower: [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "⌫"],
-    ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-    ["a", "s", "d", "f", "g", "h", "j", "k", "l", "↵"],
-    ["⇧", "z", "x", "c", "v", "b", "n", "m", ",", ".", "⇧"],
-    ["@", "_", "-", "ESPAÇO", "!", "?", "✕"],
-  ],
-  upper: [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "⌫"],
-    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "↵"],
-    ["⇧", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "⇧"],
-    ["@", "_", "-", "ESPAÇO", "!", "?", "✕"],
-  ],
-  sym: [
-    ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "⌫"],
-    ["+", "=", "[", "]", "{", "}", "\\", "|", "<", ">"],
-    [";", ":", "'", '"', "`", "~", "/", "?", ",", ".", "↵"],
-    ["⇧", "1", "2", "3", "4", "5", "6", "7", "8", "9", "⇧"],
-    ["abc", "_", "-", "ESPAÇO", "!", "?", "✕"],
-  ],
-};
-
-const KW: Record<string, number> = { "ESPAÇO": 3.4, "⌫": 1.5, "↵": 1.5, "⇧": 1.5, "✕": 1.3, "abc": 1.5 };
-
 interface VirtualKeyboardProps {
-  value: string;
-  onChange: (v: string) => void;
+  isOpen: boolean;
   onClose: () => void;
-  placeholder?: string;
+  onInput: (char: string) => void;
+  onBackspace: () => void;
+  onEnter: () => void;
+  value: string;
 }
 
-export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({ value, onChange, onClose, placeholder = "" }) => {
+const KEYS = [
+  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["SHIFT", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
+  ["SPACE", "ENTER"]
+];
+
+export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({ 
+  isOpen, onClose, onInput, onBackspace, onEnter, value 
+}) => {
   const theme = useLauncherStore((state) => state.theme);
-  const [layout, setLayout] = useState<keyof typeof KB_ROWS>("lower");
-  const [focus, setFocus] = useState({ row: 4, col: 3 });
-  const rows = KB_ROWS[layout];
+  const [row, setRow] = useState(1);
+  const [col, setCol] = useState(0);
+  const [isShift, setShift] = useState(false);
 
-  const press = useCallback((key: string) => {
-    if (key === "⌫") { onChange(value.slice(0, -1)); return; }
-    if (key === "↵" || key === "✕") { onClose(); return; }
-    if (key === "⇧") { setLayout(l => l === "lower" ? "upper" : l === "upper" ? "sym" : "lower"); return; }
-    if (key === "abc") { setLayout("lower"); return; }
-    if (key === "ESPAÇO") { onChange(value + " "); return; }
-    onChange(value + key);
-  }, [value, onChange, onClose]);
-
+  // Simple gamepad/keyboard navigation
   useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      const s = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", " ", "Escape"];
-      if (s.includes(e.key)) { e.preventDefault(); e.stopPropagation(); }
-      if (e.key === "ArrowRight") setFocus(f => ({ ...f, col: Math.min(f.col + 1, rows[f.row].length - 1) }));
-      else if (e.key === "ArrowLeft") setFocus(f => ({ ...f, col: Math.max(f.col - 1, 0) }));
-      else if (e.key === "ArrowDown") setFocus(f => { const r = Math.min(f.row + 1, rows.length - 1); return { row: r, col: Math.min(f.col, rows[r].length - 1) }; });
-      else if (e.key === "ArrowUp") setFocus(f => { const r = Math.max(f.row - 1, 0); return { row: r, col: Math.min(f.col, rows[r].length - 1) }; });
-      else if (e.key === "Enter" || e.key === " ") press(rows[focus.row][focus.col]);
-      else if (e.key === "Escape") onClose();
+    if (!isOpen) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") setRow(r => Math.max(0, r - 1));
+      if (e.key === "ArrowDown") setRow(r => Math.min(KEYS.length - 1, r + 1));
+      if (e.key === "ArrowLeft") setCol(c => Math.max(0, c - 1));
+      if (e.key === "ArrowRight") setCol(c => Math.min(KEYS[row].length - 1, c + 1));
+      if (e.key === "Enter") {
+        const key = KEYS[row][col];
+        handleKeyPress(key);
+      }
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener("keydown", h, true);
-    return () => window.removeEventListener("keydown", h, true);
-  }, [focus, rows, press, onClose]);
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isOpen, row, col]);
+
+  // Adjust column when row changes to avoid out of bounds
+  useEffect(() => {
+    if (col >= KEYS[row].length) {
+      setCol(KEYS[row].length - 1);
+    }
+  }, [row]);
+
+  const handleKeyPress = (key: string) => {
+    if (key === "SHIFT") setShift(!isShift);
+    else if (key === "BACKSPACE") onBackspace();
+    else if (key === "SPACE") onInput(" ");
+    else if (key === "ENTER") onEnter();
+    else onInput(isShift ? key.toUpperCase() : key.toLowerCase());
+  };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", background: "linear-gradient(to top,#000000bb 55%,transparent)", pointerEvents: "none" }}>
-      <div style={{ pointerEvents: "all", width: "min(860px,99vw)", background: "linear-gradient(160deg,#111128,#090916)", borderRadius: "22px 22px 0 0", border: `1px solid ${theme.border}`, borderBottom: "none", boxShadow: "0 -20px 70px #00000090", padding: "14px 14px 18px", animation: "kbUp .26s cubic-bezier(.2,.8,.4,1)" }}>
-        <div style={{ background: theme.card, border: `1.5px solid ${theme.accent}66`, borderRadius: "12px", padding: "10px 16px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px", boxShadow: `0 0 24px ${theme.accent}18` }}>
-          <span style={{ color: theme.textMuted, fontSize: "16px" }}>⌨️</span>
-          <span style={{ flex: 1, fontSize: "17px", color: value ? theme.text : theme.textMuted, fontFamily: "'Courier New',monospace", letterSpacing: "0.04em", minHeight: "22px" }}>
-            {value || placeholder}
-            <span style={{ display: "inline-block", width: 2, height: "1.1em", background: theme.accent, marginLeft: 3, verticalAlign: "middle", animation: "blink 1s step-end infinite" }} />
-          </span>
-          {value && <button onClick={() => onChange("")} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}>✕</button>}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-          {rows.map((row, ri) => (
-            <div key={ri} style={{ display: "flex", justifyContent: "center", gap: "4px" }}>
-              {row.map((key, ci) => {
-                const isFoc = focus.row === ri && focus.col === ci;
-                const isSpc = key === "ESPAÇO";
-                const isSpec = ["⌫", "↵", "⇧", "✕", "abc"].includes(key);
-                return (
-                  <button key={`${ri}-${ci}`} onClick={() => press(key)} onMouseEnter={() => setFocus({ row: ri, col: ci })} style={{ flex: KW[key] || 1, minWidth: isSpc ? 120 : 34, maxWidth: isSpc ? 220 : undefined, height: 48, borderRadius: "10px", border: isFoc ? `2px solid ${theme.accent}` : `1.5px solid ${isSpec ? "#222238" : "#1a1a2e"}`, background: isFoc ? `linear-gradient(135deg,${theme.accentDim},${theme.accent})` : isSpec ? "#1a1a2c" : "#15152a", color: isFoc ? "#fff" : isSpec ? theme.textDim : theme.text, fontSize: isSpc ? "11px" : key.length > 1 ? "14px" : "16px", fontWeight: isSpec || isFoc ? 800 : 500, cursor: "pointer", transition: "all .1s ease", boxShadow: isFoc ? `0 0 16px ${theme.accent}77,0 3px 10px #00000070` : "0 2px 5px #00000050", transform: isFoc ? "translateY(-3px)" : "none", fontFamily: "'Trebuchet MS',sans-serif", userSelect: "none" }}>
-                    {isSpc ? "ESPAÇO" : key}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: "18px", marginTop: "10px" }}>
-          {[["←→↑↓", "Navegar"], ["Enter", "Digitar"], ["Esc", "Fechar"]].map(([k, l]) => (
-            <span key={k} style={{ fontSize: "10px", color: theme.textMuted }}>
-              <span style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: "3px", padding: "1px 5px", color: theme.textDim, fontFamily: "monospace" }}>{k}</span>{" "}{l}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          style={{
+            position: "fixed", bottom: 0, left: 0, right: 0,
+            height: "45vh", background: "rgba(10, 10, 20, 0.95)",
+            backdropFilter: "blur(20px)", borderTop: `2px solid ${theme.accent}`,
+            zIndex: 4000, padding: "32px", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: "12px",
+            boxShadow: "0 -20px 60px rgba(0,0,0,0.5)"
+          }}
+        >
+          {/* Display area */}
+          <div style={{ 
+            width: "100%", maxWidth: "800px", background: "rgba(255,255,255,0.05)",
+            borderRadius: "16px", padding: "12px 24px", marginBottom: "12px",
+            border: `1px solid ${theme.border}`, display: "flex", alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            <span style={{ fontSize: "20px", fontWeight: 700, color: theme.text }}>{value || <span style={{ opacity: 0.3 }}>Digite aqui...</span>}</span>
+            <div style={{ width: 2, height: 24, background: theme.accent, animation: "blink 1s infinite" }} />
+          </div>
+
+          {/* Keys rows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+            {KEYS.map((currentRow, ri) => (
+              <div key={ri} style={{ display: "flex", gap: "8px" }}>
+                {currentRow.map((key, ci) => {
+                  const isFocused = ri === row && ci === col;
+                  const isSpecial = ["SHIFT", "BACKSPACE", "SPACE", "ENTER"].includes(key);
+                  
+                  return (
+                    <motion.div
+                      key={key}
+                      animate={{ 
+                        scale: isFocused ? 1.15 : 1,
+                        background: isFocused ? theme.accent : "rgba(255,255,255,0.05)",
+                        boxShadow: isFocused ? `0 0 20px ${theme.accent}66` : "none"
+                      }}
+                      style={{
+                        minWidth: key === "SPACE" ? "300px" : key === "ENTER" ? "120px" : isSpecial ? "100px" : "64px",
+                        height: "56px", borderRadius: "12px", display: "flex",
+                        alignItems: "center", justifyContent: "center", cursor: "pointer",
+                        border: `1px solid ${isFocused ? theme.accent : theme.border}`,
+                        color: isFocused ? "#fff" : theme.text, fontWeight: 800,
+                        fontSize: "18px"
+                      }}
+                      onClick={() => { setRow(ri); setCol(ci); handleKeyPress(key); }}
+                    >
+                      {key === "SHIFT" && <ArrowUp size={24} color={isShift ? theme.accent : "currentColor"} />}
+                      {key === "BACKSPACE" && <Delete size={24} />}
+                      {key === "SPACE" && <Space size={24} />}
+                      {key === "ENTER" && <CornerDownLeft size={24} />}
+                      {!isSpecial && (isShift ? key.toUpperCase() : key.toLowerCase())}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Hints */}
+          <div style={{ marginTop: "12px", display: "flex", gap: "24px", color: theme.textMuted, fontSize: "12px", fontWeight: 700 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ padding: "2px 6px", background: theme.card, borderRadius: 4, border: `1px solid ${theme.border}` }}>A</div> Selecionar</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ padding: "2px 6px", background: theme.card, borderRadius: 4, border: `1px solid ${theme.border}` }}>B</div> Voltar</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ padding: "2px 6px", background: theme.card, borderRadius: 4, border: `1px solid ${theme.border}` }}>X</div> Espaço</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><div style={{ padding: "2px 6px", background: theme.card, borderRadius: 4, border: `1px solid ${theme.border}` }}>Y</div> Shift</div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

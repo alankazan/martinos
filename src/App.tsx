@@ -15,8 +15,10 @@ import { useSound } from "./hooks/useSound";
 
 // Components
 import { SplashScreen } from "./components/SplashScreen";
+import { ProfileSelection } from "./components/ProfileSelection";
 import { PowerModal } from "./components/Modals/PowerModal";
 import { QuickSettings } from "./components/QuickSettings";
+import { StoreView } from "./components/StoreView";
 import { UpdateModal } from "./components/Modals/UpdateModal";
 import { Badge } from "./components/Badge";
 import { StatusDot } from "./components/StatusDot";
@@ -36,6 +38,7 @@ import { LaunchToast } from "./components/HUD/LaunchToast";
 import { KbSourceBadge } from "./components/HUD/KbSourceBadge";
 import { AmbientBackground } from "./components/AmbientBackground";
 import { Clock } from "./components/Clock";
+import { WeatherWidget } from "./components/WeatherWidget";
 
 import { AppEntry, HUDEvent, ContainerNotifEvent } from "./types/launcher";
 
@@ -73,6 +76,7 @@ export default function App() {
   const volMuted = useLauncherStore(state => state.volMuted);
   const mapping = useLauncherStore(state => state.mapping);
   const booted = useLauncherStore(state => state.booted);
+  const activeProfileId = useLauncherStore(state => state.activeProfileId);
 
   const {
     setTheme, setApps, setMapping, setSearch, setFocus, setScreensaver, setMinimized, setVolume, updateApp, addApp, setBooted
@@ -98,6 +102,7 @@ export default function App() {
   const [showPower, setShowPower] = useState(false);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [showStore, setShowStore] = useState(false);
   const [sysInfo, setSysInfo] = useState({ user: "...", hostname: "..." });
 
   const hudTimer = useRef<any>(null);
@@ -384,6 +389,7 @@ export default function App() {
   useGamepad(execAction, mapping, showHud);
 
   if (!booted) return <SplashScreen />;
+  if (!activeProfileId) return <ProfileSelection />;
 
   if (screensaver) return <Screensaver onDismiss={() => setScreensaver(false)} />;
 
@@ -528,6 +534,21 @@ export default function App() {
             🌐 Web App
           </motion.button>
 
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowStore(true)}
+            style={{
+              padding: "10px 18px", borderRadius: 12, border: "none",
+              background: `linear-gradient(135deg, ${theme.accentDim}, ${theme.accent})`,
+              color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 15px ${theme.accent}44`
+            }}>
+            <ShoppingBag size={16} /> Loja
+          </motion.button>
+
+          <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 8px" }} />
+          <WeatherWidget />
           <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 8px" }} />
           <Clock />
         </div>
@@ -535,6 +556,22 @@ export default function App() {
         <HeroPanel app={focusedApp} onLaunch={handleLaunch} onEdit={setEditing} />
 
         <div style={{ flex: 1, overflowY: "auto", paddingTop: 8, paddingBottom: 32 }}>
+          {/* Dynamic Media Row (Placeholder) */}
+          {rows.length > 0 && (
+            <CategoryRow 
+              name="Mídias Recentes" 
+              apps={[
+                { id: "m1", name: "Stranger Things", icon: "🎬", category: "Mídia", source: "streaming" },
+                { id: "m2", name: "The Witcher", icon: "🎬", category: "Mídia", source: "streaming" },
+                { id: "m3", name: "Arcane", icon: "🎬", category: "Mídia", source: "streaming" },
+              ]}
+              isFocusedRow={focusRow === -1} // Focus handling would need more logic
+              focusedCol={-1}
+              onSelectApp={() => {}}
+              onLaunchApp={() => {}}
+            />
+          )}
+
           {rows.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: "60px 48px", color: "var(--text-muted)", textAlign: "center" }}>
               {scanStatus === "scanning" ? (
@@ -609,6 +646,9 @@ export default function App() {
           sysInfo={sysInfo}
           onCheckUpdate={() => { setShowQuickSettings(false); setShowUpdate(true); }}
         />
+        <AnimatePresence>
+          {showStore && <StoreView onClose={() => setShowStore(false)} />}
+        </AnimatePresence>
         {showUpdate && <UpdateModal onClose={() => setShowUpdate(false)} />}
         {editingApp && <EditModal app={editingApp} onSave={handleSave} onClose={() => setEditing(null)} />}
         {addingApp && <AddAppModal onAdd={handleAdd} onClose={() => setAdding(false)} />}
