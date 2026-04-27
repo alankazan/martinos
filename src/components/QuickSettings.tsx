@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Volume2, Palette, Cpu, HardDrive, 
-  Settings, X, Shield, Activity 
+  Settings, X, Shield, Activity, Download 
 } from "lucide-react";
 import { useLauncherStore } from "../store/useLauncherStore";
 import { THEMES } from "../constants/launcher";
@@ -12,10 +12,11 @@ interface QuickSettingsProps {
   onClose: () => void;
   volLevel: number;
   sysInfo: { user: string; hostname: string };
+  onCheckUpdate: () => void;
 }
 
 export const QuickSettings: React.FC<QuickSettingsProps> = ({ 
-  isOpen, onClose, volLevel, sysInfo 
+  isOpen, onClose, volLevel, sysInfo, onCheckUpdate 
 }) => {
   const theme = useLauncherStore((state) => state.theme);
   const setTheme = useLauncherStore((state) => state.setTheme);
@@ -77,6 +78,18 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                     <Activity size={16} style={{ color: theme.accent }} />
                     <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textDim }}>MartinsOS v1.0.0</span>
                   </div>
+                  <button 
+                    onClick={onCheckUpdate}
+                    style={{ 
+                      marginTop: 8, padding: "10px", borderRadius: "10px", 
+                      background: theme.card, border: `1px solid ${theme.border}`,
+                      color: theme.text, fontSize: "12px", fontWeight: 700,
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                      justifyContent: "center"
+                    }}
+                  >
+                    <Download size={14} style={{ color: theme.accent }} /> Verificar Atualizações
+                  </button>
                 </div>
               </section>
 

@@ -17,6 +17,7 @@ import { useSound } from "./hooks/useSound";
 import { SplashScreen } from "./components/SplashScreen";
 import { PowerModal } from "./components/Modals/PowerModal";
 import { QuickSettings } from "./components/QuickSettings";
+import { UpdateModal } from "./components/Modals/UpdateModal";
 import { Badge } from "./components/Badge";
 import { StatusDot } from "./components/StatusDot";
 import { SmartInput } from "./components/SmartInput";
@@ -96,6 +97,7 @@ export default function App() {
   const [scanPicker, setScanPicker] = useState<AppEntry[] | null>(null);
   const [showPower, setShowPower] = useState(false);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
   const [sysInfo, setSysInfo] = useState({ user: "...", hostname: "..." });
 
   const hudTimer = useRef<any>(null);
@@ -605,7 +607,9 @@ export default function App() {
           onClose={() => setShowQuickSettings(false)} 
           volLevel={volLevel}
           sysInfo={sysInfo}
+          onCheckUpdate={() => { setShowQuickSettings(false); setShowUpdate(true); }}
         />
+        {showUpdate && <UpdateModal onClose={() => setShowUpdate(false)} />}
         {editingApp && <EditModal app={editingApp} onSave={handleSave} onClose={() => setEditing(null)} />}
         {addingApp && <AddAppModal onAdd={handleAdd} onClose={() => setAdding(false)} />}
         {addingWebApp && <AddWebAppModal onAdd={handleAddWeb} onClose={() => setAddingWebApp(false)} />}

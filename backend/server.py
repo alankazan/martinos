@@ -247,6 +247,46 @@ def scan_apps():
     return jsonify(apps)
 
 
+# ── Update System ────────────────────────────────────────────────
+@app.route('/api/update/check')
+def check_update():
+    try:
+        # Fetch remote changes
+        run('git fetch origin main')
+        local = run('git rev-parse HEAD').stdout.strip()
+        remote = run('git rev-parse origin/main').stdout.strip()
+        
+        has_update = local != remote
+        
+        # Get last commit message for context
+        msg = run('git log -1 --pretty=%B origin/main').stdout.strip()
+        
+        return jsonify({
+            'hasUpdate': has_update,
+            'local': local[:7],
+            'remote': remote[:7],
+            'message': msg
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update/apply', methods=['POST'])
+def apply_update():
+    try:
+        # Reset local changes to ensure clean pull (CAUTION: user changes lost)
+        # run('git reset --hard HEAD') 
+        r = run('git pull origin main')
+        if r.returncode != 0:
+            return jsonify({'error': 'Pull failed', 'details': r.stderr}), 500
+        
+        # Check if package.json changed
+        # (This is a simplified check, ideally we compare hashes)
+        
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ── Screenshot ────────────────────────────────────────────────────
 @app.route('/api/screenshot', methods=['POST'])
 def screenshot():
