@@ -12,7 +12,7 @@ RED='\033[0;31m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
 # --- Configuration ---
 INSTALL_PATH="/opt/martinos"
-REPO_URL="https://github.com/alankazan/martinos.git" # Update if needed
+REPO_URL="https://github.com/alankazan/martinos.git"
 AUTOSTART=true
 FORCE_INSTALL=false
 
@@ -77,11 +77,9 @@ if [[ "$(pwd)" != "$INSTALL_PATH" ]] && [[ "$FORCE_INSTALL" == "false" ]]; then
     if command -v git &>/dev/null; then
       git clone "$REPO_URL" "$INSTALL_PATH"
     else
-      # Fallback if git is not installed (will install git later and retry or assume current dir)
       warn "Git não encontrado. Tentando instalar dependências primeiro..."
     fi
   fi
-  # Se o script foi movido, executa a partir do novo local
   if [[ -f "$INSTALL_PATH/install.sh" ]]; then
     cd "$INSTALL_PATH"
   fi
@@ -191,7 +189,6 @@ if $AUTOSTART; then
   step "Configurando Autostart (Systemd)..."
   USER_NAME=$(logname || echo $SUDO_USER || echo $USER)
   
-  # Backend Service
   cat > /etc/systemd/system/martinos-backend.service << EOF
 [Unit]
 Description=MartinsOS Backend
@@ -207,7 +204,6 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-  # Frontend Service
   cat > /etc/systemd/system/martinos-frontend.service << EOF
 [Unit]
 Description=MartinsOS Frontend
@@ -223,7 +219,6 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-  # Kiosk Service (Requires GUI)
   cat > /etc/systemd/system/martinos-kiosk.service << EOF
 [Unit]
 Description=MartinsOS Kiosk UI
@@ -252,93 +247,3 @@ echo -e "\n  Para iniciar agora:"
 echo -e "  ${CYAN}sudo systemctl start martinos-backend martinos-frontend martinos-kiosk${NC}"
 echo -e "\n  O sistema iniciará automaticamente no próximo reboot."
 echo -e "  Acesse em: ${YELLOW}http://localhost:5173${NC}\n"
-$INSTALL_DIR/backend/server.py
-Restart=always
-RestartSec=3
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-  sudo tee /etc/systemd/system/martinos-frontend.service > /dev/null << EOF
-[Unit]
-Description=MartinsOS Frontend (HTTP Server)
-After=network.target martinos-backend.service
-
-[Service]
-Type=simple
-User=$CURRENT_USER
-WorkingDirectory=$INSTALL_DIR
-ExecStart=$NPX_BIN serve dist -p 5173 --no-clipboard
-Restart=always
-RestartSec=3
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-  sudo tee /etc/systemd/system/martinos-kiosk.service > /dev/null << EOF
-[Unit]
-Description=MartinsOS Kiosk (Browser em tela cheia)
-After=graphical.target martinos-frontend.service
-Wants=graphical.target
-
-[Service]
-Type=simple
-User=$CURRENT_USER
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=$HOME/.Xauthority
-ExecStart=$INSTALL_DIR/deploy/start-kiosk.sh
-Restart=on-failure
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=graphical.target
-EOF
-
-  sudo systemctl daemon-reload
-  sudo systemctl enable martinos-backend martinos-frontend martinos-kiosk
-  ok "Serviços systemd criados e habilitados"
-
-  # Desabilita screensaver do sistema via logind
-  if [[ -f /etc/systemd/logind.conf ]]; then
-    sudo sed -i 's/#IdleAction=.*/IdleAction=ignore/' /etc/systemd/logind.conf 2>/dev/null || true
-    ok "Screensaver do sistema desabilitado"
-  fi
-
-  echo -e "\n  ${YELLOW}⚑  Reinicie o sistema para ativar o modo kiosk${NC}"
-fi
-
-# ── Resumo ────────────────────────────────────────────────────────────────────
-echo ""
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}${BOLD}  ✅  MartinsOS instalado com sucesso!${NC}"
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-if $DEV_MODE; then
-  echo -e "  Modo desenvolvimento:"
-  echo -e "  ${BLUE}./deploy/start-backend.sh &${NC}   # Terminal 1"
-  echo -e "  ${BLUE}npm run dev${NC}                   # Terminal 2"
-  echo -e "  Acesse: ${YELLOW}http://localhost:5173${NC}"
-else
-  echo -e "  Para iniciar manualmente:"
-  echo -e "  ${BLUE}./deploy/start-backend.sh &${NC}"
-  echo -e "  ${BLUE}./deploy/start-frontend.sh &${NC}"
-  echo -e "  ${BLUE}./deploy/start-kiosk.sh${NC}"
-  echo ""
-  echo -e "  Acesse: ${YELLOW}http://localhost:5173${NC}"
-fi
-echo ""
-if $AUTOSTART; then
-  echo -e "  Autostart: ${GREEN}habilitado${NC}"
-  echo -e "  Verifique status: ${BLUE}systemctl status martinos-backend${NC}"
-else
-  echo -e "  Para autostart ao ligar: ${YELLOW}./install.sh --autostart${NC}"
-fi
-echo ""
