@@ -27,20 +27,36 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({ app, onLaunch, onEdit }) =
   const accent = app.iconColor || theme.accent;
   const bg = app.bgColor || theme.card;
 
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const { innerWidth, innerHeight } = window;
+    setMousePos({
+      x: (clientX / innerWidth - 0.5) * 20,
+      y: (clientY / innerHeight - 0.5) * 20
+    });
+  };
+
   return (
     <AnimatePresence mode="wait">
       <motion.div key={app.id}
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+        onMouseMove={handleMouseMove}
         transition={{ duration: .28, ease: "easeOut" }}
         style={{ position: "relative", height: 240, overflow: "hidden", flexShrink: 0 }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `radial-gradient(ellipse 80% 120% at 30% 50%, ${accent}33 0%, ${bg}88 50%, var(--bg) 100%)`,
-        }} />
+        <motion.div 
+          animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
+          style={{
+            position: "absolute", inset: "-10%",
+            background: `radial-gradient(ellipse 80% 120% at 30% 50%, ${accent}33 0%, ${bg}88 50%, var(--bg) 100%)`,
+          }} 
+        />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, var(--bg)00 0%, var(--bg) 100%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", gap: 36, padding: "0 56px" }}>
           <motion.div key={app.id + "_icon"}
-            initial={{ scale: .7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: .7, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1, x: mousePos.x, y: mousePos.y }}
             transition={{ duration: .32, ease: "backOut" }}
             style={{ width: 120, height: 120, display: "flex", alignItems: "center", justifyContent: "center", filter: `drop-shadow(0 0 28px ${accent}88)`, flexShrink: 0 }}>
             {app.icon_path || (app.icon && app.icon.length > 4) ? (
@@ -54,9 +70,14 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({ app, onLaunch, onEdit }) =
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
               {app.category}
             </div>
-            <div style={{ fontSize: 52, fontWeight: 900, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "-0.02em" }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.05, duration: 0.25 }}
+              style={{ fontSize: 52, fontWeight: 900, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "-0.02em" }}
+            >
               {app.name}
-            </div>
+            </motion.div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
               <Badge source={app.source} />
               {(app.source === "docker" || app.source === "podman") && <StatusDot running={app.running} />}

@@ -26,6 +26,7 @@ import subprocess, json, os, glob, configparser, time, threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+from functools import lru_cache
 
 app = Flask(__name__)
 CORS(app)
@@ -39,6 +40,7 @@ ICON_PATHS = [
     "/usr/share/pixmaps",
 ]
 
+@lru_cache(maxsize=512)
 def find_icon(icon_name):
     if not icon_name: return None
     if os.path.isabs(icon_name) and os.path.exists(icon_name):
@@ -306,24 +308,35 @@ def sysinfo():
 last_vol = {"level": 0, "muted": False}
 last_docker = []
 
-def monitor_system():
-    global last_vol, last_docker
-    while True:
-        try:
-            # Volume
+def monitor_volume():
+    """Monitor volume events via pactl subscribe"""
+    global last_vol
+    proc = subprocess.Popen(['pactl', 'subscribe'], stdout=subprocess.PIPE, text=True)
+    
+    # Send initial state
+    v = vol_level().get_json()
+    last_vol = v
+    socketio.emit('sys_volume', v)
+
+    for line in proc.stdout:
+        if "sink" in line.lower() or "change" in line.lower():
             v = vol_level().get_json()
             if v != last_vol:
                 last_vol = v
                 socketio.emit('sys_volume', v)
-            
-            # Docker (mais lento)
-            if time.time() % 2 < 0.5:
-                d = docker_list().get_json()
-                if d != last_docker:
-                    last_docker = d
-                    socketio.emit('sys_docker', d)
+
+def monitor_docker_media():
+    """Monitor docker and media (polling, but slower/optimized)"""
+    global last_docker
+    while True:
+        try:
+            # Docker (poll every 2s instead of 0.5s)
+            d = docker_list().get_json()
+            if d != last_docker:
+                last_docker = d
+                socketio.emit('sys_docker', d)
                     
-            # Media
+            # Media (poll every 1s)
             r = run('playerctl metadata --format \'{"title":"{{title}}","artist":"{{artist}}","status":"{{status}}"}\'')
             if r and r.stdout:
                 try:
@@ -333,7 +346,7 @@ def monitor_system():
                 
         except Exception as e:
             print(f"Monitor error: {e}")
-        time.sleep(0.5)
+        time.sleep(1.5)
 
 @socketio.on('connect')
 def handle_connect():
@@ -344,7 +357,16 @@ def handle_connect():
 
 if __name__ == '__main__':
     print('MartinsOS backend rodando em http://127.0.0.1:5174')
-    # Inicia monitor em thread separada
-    t = threading.Thread(target=monitor_system, daemon=True)
-    t.start()
+    
+    # Threads de monitoramento
+    t_vol = threading.Thread(target=monitor_volume, daemon=True)
+    t_docker = threading.Thread(target=monitor_docker_media, daemon=True)
+    
+    t_vol.start()
+    t_docker.start()
+    
+    # Signal that we are ready
+    time.sleep(0.5)
+    print('Sistema de monitoramento pronto.')
+    
     socketio.run(app, host='127.0.0.1', port=5174, debug=False)

@@ -16,7 +16,7 @@ export const WebAppViewer: React.FC<WebAppViewerProps> = ({ app, onClose, mappin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showBar, setShowBar] = useState(true);
-  const barTimer = useRef<any>();
+  const barTimer = useRef<any>(null);
 
   const resetBarTimer = useCallback(() => {
     setShowBar(true);

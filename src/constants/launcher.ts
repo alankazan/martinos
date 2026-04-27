@@ -26,13 +26,13 @@ export const SOURCE_BADGES: Record<string, { label: string; color: string; bg: s
 };
 
 export const WEB_PRESETS = [
-  { name: "YouTube", url: "https://youtube.com", icon: "📺" },
-  { name: "Twitch", url: "https://twitch.tv", icon: "🎮" },
-  { name: "Netflix", url: "https://netflix.com", icon: "🎬" },
-  { name: "Spotify", url: "https://open.spotify.com", icon: "🎵" },
-  { name: "GitHub", url: "https://github.com", icon: "🐙" },
-  { name: "Grafana", url: "http://localhost:3000", icon: "📊" },
-  { name: "Portainer", url: "http://localhost:9000", icon: "🐳" },
+  { name: "YouTube", url: "https://youtube.com", icon: "📺", bgColor: "#ff000020", iconColor: "#ff0000", hint: "Vídeos" },
+  { name: "Twitch", url: "https://twitch.tv", icon: "🎮", bgColor: "#9146ff20", iconColor: "#9146ff", hint: "Streams" },
+  { name: "Netflix", url: "https://netflix.com", icon: "🎬", bgColor: "#e5091420", iconColor: "#e50914", hint: "Filmes" },
+  { name: "Spotify", url: "https://open.spotify.com", icon: "🎵", bgColor: "#1db95420", iconColor: "#1db954", hint: "Músicas" },
+  { name: "GitHub", url: "https://github.com", icon: "🐙", bgColor: "#ffffff20", iconColor: "#ffffff", hint: "Código" },
+  { name: "Grafana", url: "http://localhost:3000", icon: "📊", bgColor: "#f4680020", iconColor: "#f46800", hint: "Monitoramento" },
+  { name: "Portainer", url: "http://localhost:9000", icon: "🐳", bgColor: "#13b5ea20", iconColor: "#13b5ea", hint: "Docker" },
 ];
 
 export const THEMES = {
@@ -102,26 +102,27 @@ export const ACTIONS: Record<string, ControlAction> = {
   clear_recent: { label: "Limpar Recentes", icon: "🧹", group: "Apps" },
   app_settings: { label: "Config. do App", icon: "⚙️", group: "Apps" },
   sys_monitor: { label: "Monitor de Sist.", icon: "📊", group: "Sistema" },
+  open_quick_settings: { label: "Painel Rápido", icon: "⚙️", group: "Sistema" },
   none: { label: "(sem ação)", icon: "—", group: "Utilitários" },
 };
 
 export const BUTTONS = [
-  { id: "0", label: "A", x: 600, y: 290, labelX: 740, labelY: 450, color: "#4ade80" },
-  { id: "1", label: "B", x: 650, y: 240, labelX: 740, labelY: 350, color: "#f87171" },
-  { id: "2", label: "X", x: 550, y: 240, labelX: 740, labelY: 250, color: "#60a5fa" },
-  { id: "3", label: "Y", x: 600, y: 190, labelX: 740, labelY: 150, color: "#facc15" },
-  { id: "4", label: "LB", x: 220, y: 120, labelX: 60, labelY: 120, color: "#94a3b8" },
-  { id: "5", label: "RB", x: 580, y: 120, labelX: 740, labelY: 50, color: "#94a3b8" },
-  { id: "6", label: "LT", x: 180, y: 80, labelX: 60, labelY: 50, color: "#94a3b8" },
-  { id: "7", label: "RT", x: 620, y: 80, labelX: 740, labelY: 100, color: "#94a3b8" },
-  { id: "8", label: "View", x: 350, y: 240, labelX: 60, labelY: 200, color: "#94a3b8" },
-  { id: "9", label: "Menu", x: 450, y: 240, labelX: 740, labelY: 200, color: "#94a3b8" },
-  { id: "10", label: "L3", x: 280, y: 240, labelX: 60, labelY: 280, color: "#38bdf8" },
-  { id: "11", label: "R3", x: 520, y: 380, labelX: 740, labelY: 500, color: "#38bdf8" },
-  { id: "12", label: "UP", x: 360, y: 340, labelX: 60, labelY: 350, color: "#fb923c" },
-  { id: "13", label: "DOWN", x: 360, y: 420, labelX: 60, labelY: 500, color: "#fb923c" },
-  { id: "14", label: "LEFT", x: 320, y: 380, labelX: 60, labelY: 420, color: "#fb923c" },
-  { id: "15", label: "RIGHT", x: 400, y: 380, labelX: 200, labelY: 520, color: "#fb923c" },
+  { id: "0", label: "A", key: "Enter", x: 600, y: 290, labelX: 740, labelY: 450, color: "#4ade80" },
+  { id: "1", label: "B", key: "Escape", x: 650, y: 240, labelX: 740, labelY: 350, color: "#f87171" },
+  { id: "2", label: "X", key: "x", x: 550, y: 240, labelX: 740, labelY: 250, color: "#60a5fa" },
+  { id: "3", label: "Y", key: "y", x: 600, y: 190, labelX: 740, labelY: 150, color: "#facc15" },
+  { id: "4", label: "LB", key: "-", x: 220, y: 120, labelX: 60, labelY: 120, color: "#94a3b8" },
+  { id: "5", label: "RB", key: "=", x: 580, y: 120, labelX: 740, labelY: 50, color: "#94a3b8" },
+  { id: "6", label: "LT", key: "[", x: 180, y: 80, labelX: 60, labelY: 50, color: "#94a3b8" },
+  { id: "7", label: "RT", key: "]", x: 620, y: 80, labelX: 740, labelY: 100, color: "#94a3b8" },
+  { id: "8", label: "View", key: "Tab", x: 350, y: 240, labelX: 60, labelY: 200, color: "#94a3b8" },
+  { id: "9", label: "Menu", key: "m", x: 450, y: 240, labelX: 740, labelY: 200, color: "#94a3b8" },
+  { id: "10", label: "L3", key: "l", x: 280, y: 240, labelX: 60, labelY: 280, color: "#38bdf8" },
+  { id: "11", label: "R3", key: "r", x: 520, y: 380, labelX: 740, labelY: 500, color: "#38bdf8" },
+  { id: "12", label: "UP", key: "ArrowUp", x: 360, y: 340, labelX: 60, labelY: 350, color: "#fb923c" },
+  { id: "13", label: "DOWN", key: "ArrowDown", x: 360, y: 420, labelX: 60, labelY: 500, color: "#fb923c" },
+  { id: "14", label: "LEFT", key: "ArrowLeft", x: 320, y: 380, labelX: 60, labelY: 420, color: "#fb923c" },
+  { id: "15", label: "RIGHT", key: "ArrowRight", x: 400, y: 380, labelX: 200, labelY: 520, color: "#fb923c" },
 ];
 
 export const DEFAULT_MAPPING: ControllerMapping = {
@@ -134,7 +135,7 @@ export const DEFAULT_MAPPING: ControllerMapping = {
   "6": "prev_media",
   "7": "next_media",
   "8": "open_terminal",
-  "9": "app_settings",
+  "9": "open_quick_settings",
   "10": "none",
   "11": "none",
   "12": "nav_up",

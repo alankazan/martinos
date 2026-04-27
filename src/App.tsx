@@ -6,12 +6,17 @@ import {
 } from "lucide-react";
 
 import { useLauncherStore } from "./store/useLauncherStore";
+import { useShallow } from "zustand/shallow";
 import { THEMES, BUTTONS, ACTIONS, CATEGORIES, IDLE_MS } from "./constants/launcher";
-import { resolveIcon, NATIVE_KB } from "./utils/system";
+import { resolveIcon, NATIVE_KB, isElectron } from "./utils/system";
 import { useGamepad } from "./hooks/useGamepad";
 import { useSocket } from "./hooks/useSocket";
+import { useSound } from "./hooks/useSound";
 
 // Components
+import { SplashScreen } from "./components/SplashScreen";
+import { PowerModal } from "./components/Modals/PowerModal";
+import { QuickSettings } from "./components/QuickSettings";
 import { Badge } from "./components/Badge";
 import { StatusDot } from "./components/StatusDot";
 import { SmartInput } from "./components/SmartInput";
@@ -28,6 +33,8 @@ import { ButtonHUD } from "./components/HUD/ButtonHUD";
 import { ContainerNotif } from "./components/HUD/ContainerNotif";
 import { LaunchToast } from "./components/HUD/LaunchToast";
 import { KbSourceBadge } from "./components/HUD/KbSourceBadge";
+import { AmbientBackground } from "./components/AmbientBackground";
+import { Clock } from "./components/Clock";
 
 import { AppEntry, HUDEvent, ContainerNotifEvent } from "./types/launcher";
 
@@ -53,12 +60,29 @@ const ThemeStyle: React.FC<{ theme: any }> = ({ theme: T }) => (
 );
 
 export default function App() {
+  const theme = useLauncherStore(state => state.theme);
+  const themeKey = useLauncherStore(state => state.themeKey);
+  const apps = useLauncherStore(state => state.apps);
+  const search = useLauncherStore(state => state.search);
+  const focusRow = useLauncherStore(state => state.focusRow);
+  const focusCol = useLauncherStore(state => state.focusCol);
+  const screensaver = useLauncherStore(state => state.screensaver);
+  const minimized = useLauncherStore(state => state.minimized);
+  const volLevel = useLauncherStore(state => state.volLevel);
+  const volMuted = useLauncherStore(state => state.volMuted);
+  const mapping = useLauncherStore(state => state.mapping);
+  const booted = useLauncherStore(state => state.booted);
+
   const {
-    themeKey, theme, apps, mapping, search, focusRow, focusCol, screensaver, minimized, volLevel, volMuted,
-    setTheme, setApps, setMapping, setSearch, setFocus, setScreensaver, setMinimized, setVolume, updateApp, addApp
-  } = useLauncherStore();
+    setTheme, setApps, setMapping, setSearch, setFocus, setScreensaver, setMinimized, setVolume, updateApp, addApp, setBooted
+  } = useLauncherStore(useShallow(s => ({
+    setTheme: s.setTheme, setApps: s.setApps, setMapping: s.setMapping, setSearch: s.setSearch, 
+    setFocus: s.setFocus, setScreensaver: s.setScreensaver, setMinimized: s.setMinimized, 
+    setVolume: s.setVolume, updateApp: s.updateApp, addApp: s.addApp, setBooted: s.setBooted
+  })));
 
   useSocket();
+  const { playSound } = useSound();
 
   const [editingApp, setEditing] = useState<AppEntry | null>(null);
   const [addingApp, setAdding] = useState(false);
@@ -70,6 +94,9 @@ export default function App() {
   const [hudEvent, setHudEvent] = useState<HUDEvent | null>(null);
   const [containerNotif, setContainerNotif] = useState<ContainerNotifEvent | null>(null);
   const [scanPicker, setScanPicker] = useState<AppEntry[] | null>(null);
+  const [showPower, setShowPower] = useState(false);
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [sysInfo, setSysInfo] = useState({ user: "...", hostname: "..." });
 
   const hudTimer = useRef<any>(null);
   const idleTimer = useRef<any>(null);
@@ -201,15 +228,22 @@ export default function App() {
     const newCol = Math.min(focusCol, currentMaxCol);
     if (newRow !== focusRow || newCol !== focusCol) {
       setFocus(newRow, newCol);
+      playSound("focus");
     }
-  }, [rows, focusRow, focusCol, setFocus]);
+  }, [rows, focusRow, focusCol, setFocus, playSound]);
 
   const focusedApp = rows[focusRow]?.apps?.[focusCol] ?? null;
 
   // Initial volume level
   useEffect(() => {
-    fetch("/api/volume/level").then(r => r.json()).then(d => setVolume(d.level, d.muted)).catch(() => { });
-  }, [setVolume]);
+    Promise.all([
+      fetch("/api/volume/level").then(r => r.json()).then(d => setVolume(d.level, d.muted)).catch(() => { }),
+      fetch("/api/sysinfo").then(r => r.json()).then(d => setSysInfo({ user: d.user, hostname: d.hostname })).catch(() => { })
+    ]).then(() => {
+      // Small artificial delay for smoothness
+      setTimeout(() => setBooted(true), 800);
+    });
+  }, [setVolume, setBooted]);
 
   const showHud = (btnId: string, actionId: string) => {
     setHudEvent({ btnId, actionId });
@@ -221,9 +255,11 @@ export default function App() {
     if (!app) return;
     updateApp({ ...app, lastUsed: Date.now() });
     if (app.source === "webapp" && (app.openMode === "iframe" || !app.openMode)) {
+      playSound("launch");
       setActiveWebApp(app);
       return;
     }
+    playSound("launch");
     setToast(app);
     if (app.exec || app.openUrl || app.webUrl) {
       fetch("/api/launch", {
@@ -232,6 +268,21 @@ export default function App() {
       }).catch(() => { });
     }
   }, [updateApp]);
+  
+  const handlePowerOff = useCallback(() => {
+    if (isElectron) window.electronAPI.powerOff();
+    else fetch("/api/poweroff", { method: "POST" });
+  }, []);
+
+  const handleReboot = useCallback(() => {
+    if (isElectron) window.electronAPI.reboot();
+    else fetch("/api/reboot", { method: "POST" });
+  }, []);
+
+  const handleQuit = useCallback(() => {
+    if (isElectron) window.electronAPI.quit();
+  }, []);
+
 
   const execAction = useCallback((actionId: string) => {
     const rs = rows;
@@ -255,7 +306,8 @@ export default function App() {
       case "add_app": setAdding(true); break;
       case "minimize": setMinimized(true); break;
       case "scan_apps": runScan(); break;
-      case "open_settings": setShowCtrl(true); break;
+      case "open_settings": setShowQuickSettings(true); break;
+      case "open_quick_settings": setShowQuickSettings(true); break;
       case "search_focus": searchInputRef.current?.click(); break;
       case "filter_all": setSearch(""); setFocus(0, 0); break;
       case "filter_pinned": { const i = rs.findIndex(r => r.name === "Fixados"); if (i >= 0) setFocus(i, 0); break; }
@@ -269,8 +321,9 @@ export default function App() {
       case "stop_media": fetch("/api/media/stop", { method: "POST" }); break;
       case "screenshot": fetch("/api/screenshot", { method: "POST" }); break;
       case "open_terminal": fetch("/api/terminal", { method: "POST" }); break;
-      case "power_off": if (window.confirm("Desligar o sistema?")) fetch("/api/poweroff", { method: "POST" }); break;
+      case "power_off": setShowPower(true); break;
       case "toggle_theme": {
+        playSound("select");
         const keys = Object.keys(THEMES);
         const idx = keys.indexOf(themeKey);
         setTheme(keys[(idx + 1) % keys.length]);
@@ -294,7 +347,7 @@ export default function App() {
             body: JSON.stringify({ name: app.name.toLowerCase() }) 
           });
         break;
-      case "reboot": if (window.confirm("Reiniciar o sistema?")) fetch("/api/reboot", { method: "POST" }); break;
+      case "reboot": setShowPower(true); break;
       case "start_container":
         if (app?.source === "docker" || app?.source === "podman")
           fetch("/api/docker/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: app.name.toLowerCase() }) }).then(() => pollDocker());
@@ -328,20 +381,53 @@ export default function App() {
 
   useGamepad(execAction, mapping, showHud);
 
+  if (!booted) return <SplashScreen />;
+
   if (screensaver) return <Screensaver onDismiss={() => setScreensaver(false)} />;
 
   if (minimized) return (
     <>
       <ThemeStyle theme={theme} />
-      <div style={{ width: "100vw", height: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20 }}>
-        <img src="/logo.png" alt="MartinsOS" style={{ width: 96, height: 96, borderRadius: 24, boxShadow: `0 0 40px ${theme.accent}66` }} />
-        <div style={{ color: "var(--text-muted)", fontSize: 18, fontWeight: 600 }}>MartinsOS minimizado</div>
-        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
+      <div style={{ width: "100vw", height: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 32, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 50%, ${theme.accent}15 0%, transparent 70%)` }} />
+        
+        <motion.div
+          animate={{ y: [0, -15, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ position: "relative" }}
+        >
+          <img src="/logo.png" alt="MartinsOS" style={{ width: 120, height: 120, borderRadius: 32, boxShadow: `0 20px 60px ${theme.accent}44`, border: `1px solid ${theme.border}` }} />
+          <div style={{ position: "absolute", inset: -20, borderRadius: 40, border: `1px solid ${theme.accent}22`, animation: "pulse 3s infinite" }} />
+        </motion.div>
+
+        <div style={{ textAlign: "center", zIndex: 10 }}>
+          <div style={{ color: "var(--text)", fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em" }}>MartinsOS</div>
+          <div style={{ color: "var(--text-muted)", fontSize: 15, fontWeight: 600, marginTop: 4, opacity: 0.7 }}>O launcher está em segundo plano</div>
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05, boxShadow: `0 12px 40px ${theme.accent}55` }}
+          whileTap={{ scale: .95 }}
           onClick={() => setMinimized(false)}
-          style={{ background: `linear-gradient(135deg,${theme.accentDim},${theme.accent})`, border: "none", borderRadius: 14, padding: "14px 32px", color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
-          ▶ Restaurar
+          style={{
+            background: `linear-gradient(135deg, ${theme.accentDim}, ${theme.accent})`,
+            border: "none", borderRadius: 18, padding: "16px 40px",
+            color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer",
+            fontFamily: "'Outfit', sans-serif", zIndex: 10,
+            boxShadow: `0 8px 30px ${theme.accent}33`, display: "flex", alignItems: "center", gap: 12
+          }}
+        >
+          <RefreshCw size={20} /> Restaurar Interface
         </motion.button>
-        <div style={{ color: "var(--text-muted)", fontSize: 13 }}>pressione H (Home)</div>
+
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "rgba(255,255,255,0.03)", padding: "8px 16px",
+          borderRadius: 12, border: `1px solid ${theme.border}`,
+          color: "var(--text-muted)", fontSize: 13, fontWeight: 700
+        }}>
+          <div style={{ padding: "2px 6px", border: `1px solid ${theme.border}`, borderRadius: "4px", background: theme.card }}>H</div> Home p/ Restaurar
+        </div>
       </div>
     </>
   );
@@ -349,7 +435,8 @@ export default function App() {
   return (
     <>
       <ThemeStyle theme={theme} />
-      <div style={{ width: "100vw", height: "100vh", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <AmbientBackground accentColor={focusedApp?.iconColor || theme.accent} />
+      <div style={{ width: "100vw", height: "100vh", background: "transparent", color: "var(--text)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <ButtonHUD event={hudEvent} />
         <ContainerNotif event={containerNotif} />
 
@@ -438,6 +525,9 @@ export default function App() {
             }}>
             🌐 Web App
           </motion.button>
+
+          <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 8px" }} />
+          <Clock />
         </div>
 
         <HeroPanel app={focusedApp} onLaunch={handleLaunch} onEdit={setEditing} />
@@ -464,20 +554,37 @@ export default function App() {
                 </>
               )}
             </div>
-          ) : rows.map((row, ri) => (
-            <CategoryRow key={row.name} name={row.name} apps={row.apps}
-              isFocusedRow={ri === focusRow}
-              focusedCol={ri === focusRow ? focusCol : -1}
-              onSelectApp={ci => setFocus(ri, ci)}
-              onLaunchApp={handleLaunch} />
-          ))}
+          ) : rows.map((row, ri) => {
+            // Lazy rendering: only render rows within 2 steps of focus
+            const isVisible = Math.abs(ri - focusRow) <= 2;
+            if (!isVisible) return <div key={row.name} style={{ height: 260 }} />;
+
+            return (
+              <CategoryRow key={row.name} name={row.name} apps={row.apps}
+                isFocusedRow={ri === focusRow}
+                focusedCol={ri === focusRow ? focusCol : -1}
+                onSelectApp={ci => setFocus(ri, ci)}
+                onLaunchApp={handleLaunch} />
+            );
+          })}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "8px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)", flexShrink: 0, flexWrap: "wrap" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 600 }}>
-            <KbSourceBadge native={NATIVE_KB.has} source={NATIVE_KB.source} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, color: "var(--text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", opacity: 0.8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Monitor size={12} style={{ color: theme.accent }} />
+              <span style={{ textTransform: "uppercase" }}>{sysInfo.hostname}</span>
+            </div>
+            <div style={{ width: 1, height: 10, background: "var(--border)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent }} />
+              <span>{sysInfo.user}</span>
+            </div>
           </div>
           <div style={{ flex: 1 }} />
+          <div style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 600 }}>
+            <KbSourceBadge native={NATIVE_KB.has} source={NATIVE_KB.source} />
+          </div>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
             onClick={() => setShowCtrl(true)}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'Outfit',sans-serif" }}>
@@ -485,6 +592,20 @@ export default function App() {
           </motion.button>
         </div>
 
+        {showPower && (
+          <PowerModal
+            onPowerOff={handlePowerOff}
+            onReboot={handleReboot}
+            onQuit={handleQuit}
+            onClose={() => setShowPower(false)}
+          />
+        )}
+        <QuickSettings 
+          isOpen={showQuickSettings} 
+          onClose={() => setShowQuickSettings(false)} 
+          volLevel={volLevel}
+          sysInfo={sysInfo}
+        />
         {editingApp && <EditModal app={editingApp} onSave={handleSave} onClose={() => setEditing(null)} />}
         {addingApp && <AddAppModal onAdd={handleAdd} onClose={() => setAdding(false)} />}
         {addingWebApp && <AddWebAppModal onAdd={handleAddWeb} onClose={() => setAddingWebApp(false)} />}

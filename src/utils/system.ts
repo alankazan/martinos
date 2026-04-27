@@ -53,3 +53,6 @@ export function detectNativeKeyboard(): NativeKeyboardDetection {
 }
 
 export const NATIVE_KB = detectNativeKeyboard();
+
+export const isElectron = typeof window !== "undefined" && !!window.electronAPI;
+

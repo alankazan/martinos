@@ -2,21 +2,21 @@ export type Theme = {
   bg: string;
   surface: string;
   card: string;
-  cardHover: string;
+  cardHover?: string;
   border: string;
   accent: string;
   accentDim: string;
-  accentGlow: string;
+  accentGlow?: string;
   text: string;
   textDim: string;
   textMuted: string;
-  green: string;
-  red: string;
-  orange: string;
-  yellow: string;
-  blue: string;
+  green?: string;
+  red?: string;
+  orange?: string;
+  yellow?: string;
+  blue?: string;
   name: string;
-  icon: string;
+  icon?: string;
 };
 
 export type AppSource = 
@@ -51,10 +51,12 @@ export type AppEntry = {
   alreadyAdded?: boolean; // temporary for scan results
 };
 
+export type ActionCategory = "Navegação" | "Apps" | "Sistema" | "Filtros" | "Mídia" | "Docker" | "Utilitários" | "Ações";
+
 export type ControlAction = {
   label: string;
   icon: string;
-  group: "Navegação" | "Apps" | "Sistema" | "Filtros" | "Mídia" | "Docker" | "Utilitários";
+  group: ActionCategory;
 };
 
 export type ButtonConfig = {

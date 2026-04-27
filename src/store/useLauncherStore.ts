@@ -15,8 +15,10 @@ interface LauncherState {
   minimized: boolean;
   volLevel: number;
   volMuted: boolean;
+  booted: boolean;
 
   // Actions
+  setBooted: (val: boolean) => void;
   setTheme: (key: string) => void;
   setApps: (apps: AppEntry[] | ((prev: AppEntry[]) => AppEntry[])) => void;
   setMapping: (mapping: ControllerMapping) => void;
@@ -32,7 +34,7 @@ interface LauncherState {
 
 export const useLauncherStore = create<LauncherState>((set) => ({
   themeKey: loadLS("ml_theme", "cosmos"),
-  theme: THEMES[loadLS("ml_theme", "cosmos")] || THEMES.cosmos,
+  theme: THEMES[loadLS("ml_theme", "cosmos") as keyof typeof THEMES] || THEMES.cosmos,
   apps: loadLS("ml_apps", []),
   mapping: loadLS("ml_mapping", DEFAULT_MAPPING),
   search: "",
@@ -42,10 +44,13 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   minimized: false,
   volLevel: 0,
   volMuted: false,
+  booted: false,
+
+  setBooted: (val) => set({ booted: val }),
 
   setTheme: (key) => {
     saveLS("ml_theme", key);
-    set({ themeKey: key, theme: THEMES[key] || THEMES.cosmos });
+    set({ themeKey: key, theme: THEMES[key as keyof typeof THEMES] || THEMES.cosmos });
   },
   setApps: (appsOrFn) => {
     set((state) => {
