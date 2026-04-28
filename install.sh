@@ -31,7 +31,7 @@ banner() {
   echo "  ██║╚██╔╝██║██╔══██║██╔══██╗   ██║   ██║██║╚██╗██║╚════██║"
   echo "  ██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   ██║██║ ╚████║███████║"
   echo "  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝"
-  echo -e "${NC}${CYAN}  MartinsOS Native Launcher — Installer v2.0${NC}\n"
+  echo -e "${NC}${CYAN}  MartinsOS Native Launcher — Installer v4.0${NC}\n"
 }
 
 step()    { echo -e "\n${YELLOW}▶ $1${NC}"; }

@@ -19,6 +19,7 @@ interface LauncherState {
   profiles: UserProfile[];
   activeProfileId: string | null;
   inputMode: "gamepad" | "keyboard";
+  telemetry: { cpu: number; ram: number; temp: number };
 
   // Actions
   setBooted: (val: boolean) => void;
@@ -37,6 +38,7 @@ interface LauncherState {
   setActiveProfile: (id: string) => void;
   addProfile: (p: UserProfile) => void;
   setInputMode: (mode: "gamepad" | "keyboard") => void;
+  setTelemetry: (data: { cpu: number; ram: number; temp: number }) => void;
 }
 
 export const useLauncherStore = create<LauncherState>((set) => ({
@@ -55,6 +57,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   profiles: loadLS("ml_profiles", []),
   activeProfileId: loadLS("ml_active_profile", null),
   inputMode: "keyboard",
+  telemetry: { cpu: 0, ram: 0, temp: 0 },
 
   setBooted: (val) => set({ booted: val }),
 
@@ -107,4 +110,5 @@ export const useLauncherStore = create<LauncherState>((set) => ({
     return { profiles: next };
   }),
   setInputMode: (mode) => set({ inputMode: mode }),
+  setTelemetry: (telemetry) => set({ telemetry }),
 }));

@@ -27,6 +27,10 @@ export function useSocket() {
       }));
     });
 
+    socket.on("sys_health", (data) => {
+      useLauncherStore.getState().setTelemetry(data);
+    });
+
     socket.on("sys_media", (data) => {
       // Could be used to show "Now Playing" in the HeroPanel or HUD
       console.log("Media update:", data);

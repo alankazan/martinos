@@ -22,7 +22,7 @@ Endpoints:
   POST /api/terminal
   POST /api/reboot
 """
-import subprocess, json, os, glob, configparser, time, threading, socket
+import subprocess, json, os, glob, configparser, time, threading, socket, psutil
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -580,6 +580,32 @@ def monitor_docker_media():
             print(f"Monitor error: {e}")
         time.sleep(1.5)
 
+def monitor_system_health():
+    """Monitor CPU, RAM and Temp"""
+    while True:
+        try:
+            cpu = psutil.cpu_percent(interval=None)
+            ram = psutil.virtual_memory().percent
+            
+            # Temperatura (pode falhar dependendo do hardware/OS)
+            temp = 0
+            try:
+                temps = psutil.sensors_temperatures()
+                if 'coretemp' in temps:
+                    temp = temps['coretemp'][0].current
+                elif 'cpu_thermal' in temps:
+                    temp = temps['cpu_thermal'][0].current
+            except: pass
+            
+            socketio.emit('sys_health', {
+                'cpu': cpu,
+                'ram': ram,
+                'temp': temp
+            })
+        except Exception as e:
+            print(f"Health Monitor error: {e}")
+        time.sleep(2)
+
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
@@ -594,9 +620,11 @@ if __name__ == '__main__':
     # Threads de monitoramento
     t_vol = threading.Thread(target=monitor_volume, daemon=True)
     t_docker = threading.Thread(target=monitor_docker_media, daemon=True)
+    t_health = threading.Thread(target=monitor_system_health, daemon=True)
     
     t_vol.start()
     t_docker.start()
+    t_health.start()
     
     # Signal that we are ready
     time.sleep(0.5)

@@ -77,7 +77,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <Activity size={16} style={{ color: theme.accent }} />
-                    <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textDim }}>MartinsOS v1.0.0</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textDim }}>MartinsOS v4.0.0</span>
                   </div>
                   <button 
                     onClick={onCheckUpdate}
