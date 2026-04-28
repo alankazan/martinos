@@ -135,7 +135,7 @@ step "Instalando dependências do projeto..."
 cd "$INSTALL_PATH"
 
 info "Frontend (npm)..."
-npm install --silent
+npm install --silent --legacy-peer-deps
 ok "NPM concluído"
 
 info "Backend (pip)..."

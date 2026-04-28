@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Volume2, VolumeX, Play, SkipBack, SkipForward,
-  Plus, Gamepad2, Palette, RefreshCw, Monitor
+  Plus, Gamepad2, Palette, RefreshCw, Monitor, ShoppingBag
 } from "lucide-react";
 
 import { useLauncherStore } from "./store/useLauncherStore";
