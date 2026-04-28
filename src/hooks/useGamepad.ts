@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { GAMEPAD_BTN_MAP } from "../constants/launcher";
 import { ControllerMapping } from "../types/launcher";
+import { useLauncherStore } from "../store/useLauncherStore";
 
 export function useGamepad(
   execAction: (actionId: string) => void,
@@ -21,6 +22,7 @@ export function useGamepad(
           const key = `${gp.index}-${i}`;
           const wasPressed = prev.current[key];
           if (btn.pressed && !wasPressed) {
+            useLauncherStore.getState().setInputMode("gamepad");
             const actionId = mapping[btnId];
             if (actionId && actionId !== "none") {
               showHud(btnId, actionId);

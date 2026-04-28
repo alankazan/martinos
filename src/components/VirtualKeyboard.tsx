@@ -24,6 +24,7 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   isOpen, onClose, onInput, onBackspace, onEnter, value 
 }) => {
   const theme = useLauncherStore((state) => state.theme);
+  const inputMode = useLauncherStore((state) => state.inputMode);
   const [row, setRow] = useState(1);
   const [col, setCol] = useState(0);
   const [isShift, setShift] = useState(false);
@@ -62,6 +63,8 @@ export const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
     else if (key === "ENTER") onEnter();
     else onInput(isShift ? key.toUpperCase() : key.toLowerCase());
   };
+
+  if (inputMode === "keyboard") return null;
 
   return (
     <AnimatePresence>

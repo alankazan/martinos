@@ -18,6 +18,7 @@ interface LauncherState {
   booted: boolean;
   profiles: UserProfile[];
   activeProfileId: string | null;
+  inputMode: "gamepad" | "keyboard";
 
   // Actions
   setBooted: (val: boolean) => void;
@@ -35,6 +36,7 @@ interface LauncherState {
   setProfiles: (p: UserProfile[]) => void;
   setActiveProfile: (id: string) => void;
   addProfile: (p: UserProfile) => void;
+  setInputMode: (mode: "gamepad" | "keyboard") => void;
 }
 
 export const useLauncherStore = create<LauncherState>((set) => ({
@@ -52,6 +54,7 @@ export const useLauncherStore = create<LauncherState>((set) => ({
   booted: false,
   profiles: loadLS("ml_profiles", []),
   activeProfileId: loadLS("ml_active_profile", null),
+  inputMode: "keyboard",
 
   setBooted: (val) => set({ booted: val }),
 
@@ -103,4 +106,5 @@ export const useLauncherStore = create<LauncherState>((set) => ({
     saveLS("ml_profiles", next);
     return { profiles: next };
   }),
+  setInputMode: (mode) => set({ inputMode: mode }),
 }));

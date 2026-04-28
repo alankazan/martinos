@@ -399,6 +399,7 @@ export default function App() {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      useLauncherStore.getState().setInputMode("keyboard");
       if (editingApp || addingApp || addingWebApp || showCtrl || activeWebApp) return;
       const btn = BUTTONS.find(b => b.key === e.key);
       if (!btn) return;
