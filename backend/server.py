@@ -22,11 +22,21 @@ Endpoints:
   POST /api/terminal
   POST /api/reboot
 """
-import subprocess, json, os, glob, configparser, time, threading
+import subprocess, json, os, glob, configparser, time, threading, socket
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from functools import lru_cache
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 
 app = Flask(__name__)
 CORS(app)
@@ -377,8 +387,96 @@ def sysinfo():
     return jsonify({
         'native_kb': os.environ.get('LAUNCHER_NATIVE_KB', 'auto'),
         'hostname': os.uname().nodename if hasattr(os, 'uname') else 'unknown',
-        'user': os.environ.get('USER', 'unknown')
+        'user': os.environ.get('USER', 'unknown'),
+        'ip': get_local_ip()
     })
+
+# ── Smart Remote (xdotool) ────────────────────────────────────────
+@app.route('/api/remote/mouse', methods=['POST'])
+def remote_mouse():
+    d = request.json or {}
+    dx, dy = d.get('dx', 0), d.get('dy', 0)
+    run(f'xdotool mousemove_relative -- {dx} {dy}')
+    return jsonify({'ok': True})
+
+@app.route('/api/remote/click', methods=['POST'])
+def remote_click():
+    run('xdotool click 1')
+    return jsonify({'ok': True})
+
+@app.route('/api/remote/type', methods=['POST'])
+def remote_type():
+    text = (request.json or {}).get('text', '')
+    if text:
+        # Escape quotes
+        safe_text = text.replace("'", "'\\''")
+        run(f"xdotool type '{safe_text}'")
+    return jsonify({'ok': True})
+
+@app.route('/api/remote/key', methods=['POST'])
+def remote_key():
+    key = (request.json or {}).get('key', '')
+    if key:
+        run(f'xdotool key "{key}"')
+    return jsonify({'ok': True})
+
+# ── System Manager (Network & Bluetooth) ──────────────────────────
+@app.route('/api/network/wifi')
+def network_wifi():
+    r = run('nmcli -t -f SSID,BSSID,SIGNAL,SECURITY,ACTIVE dev wifi')
+    if not r or not r.stdout: return jsonify([])
+    networks = []
+    seen = set()
+    for line in r.stdout.strip().splitlines():
+        parts = line.split(':')
+        if len(parts) >= 5:
+            ssid = parts[0].replace('\\:', ':')
+            if not ssid or ssid in seen: continue
+            seen.add(ssid)
+            networks.append({
+                'ssid': ssid,
+                'bssid': parts[1],
+                'signal': int(parts[2]) if parts[2].isdigit() else 0,
+                'security': parts[3],
+                'active': parts[4] == 'yes'
+            })
+    return jsonify(networks)
+
+@app.route('/api/network/connect', methods=['POST'])
+def network_connect():
+    d = request.json or {}
+    ssid, password = d.get('ssid', ''), d.get('password', '')
+    cmd = f'nmcli dev wifi connect "{ssid}" password "{password}"' if password else f'nmcli dev wifi connect "{ssid}"'
+    r = run(cmd)
+    if r and r.returncode == 0:
+        return jsonify({'ok': True})
+    return jsonify({'error': 'Failed to connect'}), 500
+
+@app.route('/api/bluetooth/devices')
+def bluetooth_devices():
+    r = run('bluetoothctl devices')
+    if not r or not r.stdout: return jsonify([])
+    devices = []
+    for line in r.stdout.strip().splitlines():
+        parts = line.split(' ', 2)
+        if len(parts) >= 3:
+            devices.append({'mac': parts[1], 'name': parts[2]})
+    return jsonify(devices)
+
+@app.route('/api/bluetooth/scan', methods=['POST'])
+def bluetooth_scan():
+    state = (request.json or {}).get('state', 'on')
+    run(f'bluetoothctl scan {state}')
+    return jsonify({'ok': True})
+
+@app.route('/api/bluetooth/pair', methods=['POST'])
+def bluetooth_pair():
+    mac = (request.json or {}).get('mac', '')
+    run(f'bluetoothctl pair {mac}')
+    run(f'bluetoothctl trust {mac}')
+    run(f'bluetoothctl connect {mac}')
+    return jsonify({'ok': True})
+
 
 # ── Background Monitoring ─────────────────────────────────────────
 last_vol = {"level": 0, "muted": False}
@@ -445,4 +543,4 @@ if __name__ == '__main__':
     time.sleep(0.5)
     print('Sistema de monitoramento pronto.')
     
-    socketio.run(app, host='127.0.0.1', port=5174, debug=False)
+    socketio.run(app, host='0.0.0.0', port=5174, debug=False)

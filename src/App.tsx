@@ -39,6 +39,10 @@ import { KbSourceBadge } from "./components/HUD/KbSourceBadge";
 import { AmbientBackground } from "./components/AmbientBackground";
 import { Clock } from "./components/Clock";
 import { WeatherWidget } from "./components/WeatherWidget";
+import { SmartRemote } from "./components/Remote/SmartRemote";
+import { QrCodeModal } from "./components/Modals/QrCodeModal";
+import { SystemSettings } from "./components/Modals/SystemSettings";
+import { Smartphone } from "lucide-react";
 
 import { AppEntry, HUDEvent, ContainerNotifEvent } from "./types/launcher";
 
@@ -103,7 +107,9 @@ export default function App() {
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [sysInfo, setSysInfo] = useState({ user: "...", hostname: "..." });
+  const [showQr, setShowQr] = useState(false);
+  const [showSystemSettings, setShowSystemSettings] = useState(false);
+  const [sysInfo, setSysInfo] = useState({ user: "...", hostname: "...", ip: "127.0.0.1" });
 
   const hudTimer = useRef<any>(null);
   const idleTimer = useRef<any>(null);
@@ -245,7 +251,7 @@ export default function App() {
   useEffect(() => {
     Promise.all([
       fetch("/api/volume/level").then(r => r.json()).then(d => setVolume(d.level, d.muted)).catch(() => { }),
-      fetch("/api/sysinfo").then(r => r.json()).then(d => setSysInfo({ user: d.user, hostname: d.hostname })).catch(() => { })
+      fetch("/api/sysinfo").then(r => r.json()).then(d => setSysInfo({ user: d.user, hostname: d.hostname, ip: d.ip || "127.0.0.1" })).catch(() => { })
     ]).then(() => {
       // Small artificial delay for smoothness
       setTimeout(() => setBooted(true), 800);
@@ -387,6 +393,8 @@ export default function App() {
   }, [mapping, execAction, editingApp, addingApp, addingWebApp, showCtrl, activeWebApp]);
 
   useGamepad(execAction, mapping, showHud);
+
+  if (window.location.pathname === "/remote") return <SmartRemote />;
 
   if (!booted) return <SplashScreen />;
   if (!activeProfileId) return <ProfileSelection />;
@@ -547,6 +555,19 @@ export default function App() {
             <ShoppingBag size={16} /> Loja
           </motion.button>
 
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowQr(true)}
+            style={{
+              padding: "10px 18px", borderRadius: 12, border: "1px solid var(--border)",
+              background: "var(--card)",
+              color: "var(--text)", fontWeight: 800, fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8
+            }}>
+            <Smartphone size={16} style={{ color: theme.accent }} /> Remote
+          </motion.button>
+
           <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 8px" }} />
           <WeatherWidget />
           <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 8px" }} />
@@ -645,11 +666,14 @@ export default function App() {
           volLevel={volLevel}
           sysInfo={sysInfo}
           onCheckUpdate={() => { setShowQuickSettings(false); setShowUpdate(true); }}
+          onOpenSystemSettings={() => setShowSystemSettings(true)}
         />
         <AnimatePresence>
           {showStore && <StoreView onClose={() => setShowStore(false)} />}
+          {showQr && <QrCodeModal url={`http://${sysInfo.ip}:5173/remote`} onClose={() => setShowQr(false)} />}
         </AnimatePresence>
         {showUpdate && <UpdateModal onClose={() => setShowUpdate(false)} />}
+        {showSystemSettings && <SystemSettings onClose={() => setShowSystemSettings(false)} />}
         {editingApp && <EditModal app={editingApp} onSave={handleSave} onClose={() => setEditing(null)} />}
         {addingApp && <AddAppModal onAdd={handleAdd} onClose={() => setAdding(false)} />}
         {addingWebApp && <AddWebAppModal onAdd={handleAddWeb} onClose={() => setAddingWebApp(false)} />}

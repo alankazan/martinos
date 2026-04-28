@@ -106,8 +106,9 @@ esac
 ok "Repositórios atualizados"
 
 step "Instalando dependências de sistema..."
-DEPS=(git curl python3 python3-pip chromium-browser btop playerctl)
-[[ "$PM" == "pacman" ]] && DEPS=(git curl python python-pip chromium btop playerctl)
+DEPS=(git curl python3 python3-pip chromium-browser btop playerctl xdotool network-manager bluez avahi-daemon)
+[[ "$PM" == "pacman" ]] && DEPS=(git curl python python-pip chromium btop playerctl xdotool networkmanager bluez avahi)
+[[ "$PM" == "dnf" ]] && DEPS=(git curl python3 python3-pip chromium btop playerctl xdotool NetworkManager bluez avahi)
 
 for pkg in "${DEPS[@]}"; do
   install_pkg "$pkg" && ok "$pkg instalado" || warn "Falha ao instalar $pkg"

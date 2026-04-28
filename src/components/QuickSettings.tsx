@@ -13,10 +13,11 @@ interface QuickSettingsProps {
   volLevel: number;
   sysInfo: { user: string; hostname: string };
   onCheckUpdate: () => void;
+  onOpenSystemSettings: () => void;
 }
 
 export const QuickSettings: React.FC<QuickSettingsProps> = ({ 
-  isOpen, onClose, volLevel, sysInfo, onCheckUpdate 
+  isOpen, onClose, volLevel, sysInfo, onCheckUpdate, onOpenSystemSettings
 }) => {
   const theme = useLauncherStore((state) => state.theme);
   const setTheme = useLauncherStore((state) => state.setTheme);
@@ -89,6 +90,19 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                     }}
                   >
                     <Download size={14} style={{ color: theme.accent }} /> Verificar Atualizações
+                  </button>
+
+                  <button 
+                    onClick={() => { onClose(); onOpenSystemSettings(); }}
+                    style={{ 
+                      padding: "10px", borderRadius: "10px", 
+                      background: `linear-gradient(135deg, ${theme.accentDim}, ${theme.accent})`, 
+                      border: "none", color: "#fff", fontSize: "12px", fontWeight: 700,
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                      justifyContent: "center"
+                    }}
+                  >
+                    <Settings size={14} /> Redes & Bluetooth
                   </button>
                 </div>
               </section>
