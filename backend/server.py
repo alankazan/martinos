@@ -23,7 +23,7 @@ Endpoints:
   POST /api/reboot
 """
 import subprocess, json, os, glob, configparser, time, threading, socket, psutil, requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from functools import lru_cache
@@ -38,9 +38,20 @@ def get_local_ip():
     except:
         return "127.0.0.1"
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../dist', static_url_path='/')
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 ICON_PATHS = [
     os.path.expanduser("~/.local/share/icons"),

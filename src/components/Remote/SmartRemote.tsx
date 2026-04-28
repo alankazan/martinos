@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { 
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, 
   Play, Pause, SkipBack, SkipForward, Circle, 

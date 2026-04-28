@@ -24,7 +24,7 @@ interface TopBarProps {
   setShowAdd: (v: boolean) => void;
   setShowStore: (v: boolean) => void;
   setShowQr: (v: boolean) => void;
-  searchInputRef: React.RefObject<HTMLDivElement>;
+  searchInputRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({

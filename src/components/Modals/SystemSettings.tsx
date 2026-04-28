@@ -127,7 +127,7 @@ export function SystemSettings({ onClose }: SystemSettingsProps) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                   <StatCard icon={Cpu} label="Processador" value={`${telemetry.cpu}%`} sub="Uso da CPU" color={theme.accent} />
                   <StatCard icon={Activity} label="Memória RAM" value={`${telemetry.ram}%`} sub="Uso da memória" color={theme.blue || "#3b82f6"} />
-                  <StatCard icon={Thermometer} label="Temperatura" value={`${telemetry.temp}°C`} sub="Core package" color={telemetry.temp > 70 ? theme.red : theme.green || "#10b981"} />
+                  <StatCard icon={Thermometer} label="Temperatura" value={`${telemetry.temp}°C`} sub="Core package" color={telemetry.temp > 70 ? (theme.red || "#ef4444") : (theme.green || "#10b981")} />
                   <StatCard icon={Info} label="Aplicativos" value={apps.length.toString()} sub="Instalados" color={theme.orange || "#f59e0b"} />
                 </div>
                 

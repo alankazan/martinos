@@ -1,0 +1,12 @@
+[Unit]
+Description=MartinsOS Kiosk UI
+After=martinos-backend.service graphical.target
+
+[Service]
+User=pi
+Environment=DISPLAY=:0
+ExecStart=/opt/martinos/deploy/start-kiosk.sh
+Restart=on-failure
+
+[Install]
+WantedBy=graphical.target

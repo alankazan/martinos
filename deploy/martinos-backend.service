@@ -1,0 +1,12 @@
+[Unit]
+Description=MartinsOS Backend
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/opt/martinos/backend
+ExecStart=/usr/bin/python3 /opt/martinos/backend/server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -171,8 +171,7 @@ EOF
 
 cat > deploy/start-frontend.sh << EOF
 #!/usr/bin/env bash
-cd "$INSTALL_PATH"
-exec npx serve dist -p 5173 --no-clipboard
+echo "O frontend agora é servido diretamente pelo backend no porto 5174."
 EOF
 
 cat > deploy/start-kiosk.sh << EOF
@@ -180,7 +179,7 @@ cat > deploy/start-kiosk.sh << EOF
 sleep 5
 xset s off -dpms 2>/dev/null || true
 BROWSER=\$(command -v chromium-browser || command -v chromium || command -v google-chrome)
-exec \$BROWSER --kiosk --app=http://localhost:5173 --no-first-run --disable-infobars 2>/dev/null
+exec \$BROWSER --kiosk --app=http://localhost:5174 --no-first-run --disable-infobars 2>/dev/null
 EOF
 chmod +x deploy/*.sh
 ok "Scripts de execução criados"
@@ -205,25 +204,15 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-  cat > /etc/systemd/system/martinos-frontend.service << EOF
-[Unit]
-Description=MartinsOS Frontend
-After=martinos-backend.service
-
-[Service]
-User=$USER_NAME
-WorkingDirectory=$INSTALL_PATH
-ExecStart=$(command -v npx) serve dist -p 5173 --no-clipboard
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
+  # O frontend agora é servido pelo backend, então removemos o serviço de frontend separado
+  systemctl stop martinos-frontend 2>/dev/null || true
+  systemctl disable martinos-frontend 2>/dev/null || true
+  rm -f /etc/systemd/system/martinos-frontend.service
 
   cat > /etc/systemd/system/martinos-kiosk.service << EOF
 [Unit]
 Description=MartinsOS Kiosk UI
-After=martinos-frontend.service graphical.target
+After=martinos-backend.service graphical.target
 
 [Service]
 User=$USER_NAME
@@ -236,7 +225,7 @@ WantedBy=graphical.target
 EOF
 
   systemctl daemon-reload
-  systemctl enable martinos-backend martinos-frontend martinos-kiosk
+  systemctl enable martinos-backend martinos-kiosk
   ok "Serviços habilitados e configurados"
 fi
 
@@ -245,6 +234,6 @@ echo -e "\n${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}${BOLD}  ✅  MartinsOS Instalado com Sucesso em $INSTALL_PATH${NC}"
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "\n  Para iniciar agora:"
-echo -e "  ${CYAN}sudo systemctl start martinos-backend martinos-frontend martinos-kiosk${NC}"
+echo -e "  ${CYAN}sudo systemctl start martinos-backend martinos-kiosk${NC}"
 echo -e "\n  O sistema iniciará automaticamente no próximo reboot."
-echo -e "  Acesse em: ${YELLOW}http://localhost:5173${NC}\n"
+echo -e "  Acesse em: ${YELLOW}http://localhost:5174${NC}\n"
