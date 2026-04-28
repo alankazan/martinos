@@ -64,6 +64,26 @@ const ThemeStyle: React.FC<{ theme: any }> = ({ theme: T }) => (
     @keyframes spin  {from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
     @keyframes blink {0%,100%{opacity:1}50%{opacity:0}}
     ::-webkit-scrollbar{width:0;height:0;}
+    
+    .app-container { width: 100vw; height: 100vh; background: transparent; color: var(--text); display: flex; flex-direction: column; overflow: hidden; }
+    .top-bar { display: flex; align-items: center; gap: 16px; padding: 0 48px; height: 68px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg,var(--surface),transparent); flex-shrink: 0; }
+    .search-container { flex: 0 0 280px; }
+    .hero-container { position: relative; height: 240px; overflow: hidden; flex-shrink: 0; }
+    .hero-content { position: relative; height: 100%; display: flex; align-items: center; gap: 36px; padding: 0 56px; }
+    .hero-icon { width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hero-title { font-size: 52px; font-weight: 900; color: var(--text); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; }
+    .content-area { flex: 1; overflow-y: auto; padding-top: 8px; padding-bottom: 32px; }
+    .bottom-bar { display: flex; align-items: center; gap: 16px; padding: 8px 48px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; flex-wrap: wrap; }
+    
+    @media (max-width: 1024px) {
+      .top-bar { flex-wrap: wrap; height: auto; padding: 16px 24px; gap: 12px; }
+      .search-container { flex: 1 1 100%; order: 10; margin-top: 8px; }
+      .hero-content { padding: 0 24px; gap: 20px; }
+      .hero-icon { width: 80px; height: 80px; }
+      .hero-title { font-size: 36px; }
+      .content-area { padding-bottom: 80px; }
+      .bottom-bar { padding: 16px 24px; }
+    }
   `}</style>
 );
 
@@ -397,7 +417,6 @@ export default function App() {
   if (window.location.pathname === "/remote") return <SmartRemote />;
 
   if (!booted) return <SplashScreen />;
-  if (!activeProfileId) return <ProfileSelection />;
 
   if (screensaver) return <Screensaver onDismiss={() => setScreensaver(false)} />;
 
@@ -452,11 +471,11 @@ export default function App() {
     <>
       <ThemeStyle theme={theme} />
       <AmbientBackground accentColor={focusedApp?.iconColor || theme.accent} />
-      <div style={{ width: "100vw", height: "100vh", background: "transparent", color: "var(--text)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="app-container">
         <ButtonHUD event={hudEvent} />
         <ContainerNotif event={containerNotif} />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 48px", height: 68, borderBottom: "1px solid var(--border)", background: `linear-gradient(180deg,var(--surface),transparent)`, flexShrink: 0 }}>
+        <div className="top-bar">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginRight: 8 }}>
             <img src="/logo.png" alt="MartinsOS" style={{ width: 44, height: 44, borderRadius: 12, boxShadow: `0 0 20px ${theme.accent}66`, objectFit: "cover" }} />
             <div>
@@ -467,7 +486,7 @@ export default function App() {
             </div>
           </div>
 
-          <div ref={searchInputRef} style={{ flex: "0 0 280px" }}>
+          <div ref={searchInputRef} className="search-container">
             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
               <Search size={16} style={{ position: "absolute", left: 12, color: "var(--text-muted)", pointerEvents: "none" }} />
               <SmartInput value={search} onChange={v => setSearch(v)} placeholder="Buscar app..." style={{ paddingLeft: 36 }} />
@@ -576,7 +595,7 @@ export default function App() {
 
         <HeroPanel app={focusedApp} onLaunch={handleLaunch} onEdit={setEditing} />
 
-        <div style={{ flex: 1, overflowY: "auto", paddingTop: 8, paddingBottom: 32 }}>
+        <div className="content-area">
           {/* Dynamic Media Row (Placeholder) */}
           {rows.length > 0 && (
             <CategoryRow 
@@ -629,7 +648,7 @@ export default function App() {
           })}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "8px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)", flexShrink: 0, flexWrap: "wrap" }}>
+        <div className="bottom-bar">
           <div style={{ display: "flex", alignItems: "center", gap: 12, color: "var(--text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", opacity: 0.8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Monitor size={12} style={{ color: theme.accent }} />

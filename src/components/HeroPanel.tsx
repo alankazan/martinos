@@ -44,7 +44,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({ app, onLaunch, onEdit }) =
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
         onMouseMove={handleMouseMove}
         transition={{ duration: .28, ease: "easeOut" }}
-        style={{ position: "relative", height: 240, overflow: "hidden", flexShrink: 0 }}>
+        className="hero-container">
         <motion.div 
           animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
           style={{
@@ -53,12 +53,12 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({ app, onLaunch, onEdit }) =
           }} 
         />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, var(--bg)00 0%, var(--bg) 100%)", pointerEvents: "none" }} />
-        <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", gap: 36, padding: "0 56px" }}>
+        <div className="hero-content">
           <motion.div key={app.id + "_icon"}
             initial={{ scale: .7, opacity: 0 }} 
             animate={{ scale: 1, opacity: 1, x: mousePos.x, y: mousePos.y }}
             transition={{ duration: .32, ease: "backOut" }}
-            style={{ width: 120, height: 120, display: "flex", alignItems: "center", justifyContent: "center", filter: `drop-shadow(0 0 28px ${accent}88)`, flexShrink: 0 }}>
+            className="hero-icon" style={{ filter: `drop-shadow(0 0 28px ${accent}88)` }}>
             {app.icon_path || (app.icon && app.icon.length > 4) ? (
               <img src={app.icon_path ? `/api/icon?name=${encodeURIComponent(app.icon)}` : app.icon} 
                    alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
@@ -74,7 +74,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({ app, onLaunch, onEdit }) =
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.05, duration: 0.25 }}
-              style={{ fontSize: 52, fontWeight: 900, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "-0.02em" }}
+              className="hero-title"
             >
               {app.name}
             </motion.div>
