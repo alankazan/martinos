@@ -126,6 +126,19 @@ export const StoreView: React.FC<StoreViewProps> = ({ onClose }) => {
           </div>
         </div>
         <div style={{ flex: 1 }} />
+        <button 
+          onClick={fetchFeatured}
+          disabled={loading}
+          style={{ 
+            background: "rgba(255,255,255,0.05)", border: "none", color: theme.text, 
+            cursor: "pointer", width: 48, height: 48, borderRadius: 16, 
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginRight: -16
+          }}
+          title="Recarregar"
+        >
+          <RefreshCw size={20} style={{ animation: loading ? "spin 2s linear infinite" : "none" }} />
+        </button>
         <div style={{ width: 400, position: "relative" }}>
           <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: theme.textMuted, zIndex: 1, pointerEvents: "none" }} />
           <SmartInput 
@@ -135,10 +148,13 @@ export const StoreView: React.FC<StoreViewProps> = ({ onClose }) => {
         </div>
         <button 
           onClick={search}
+          disabled={loading || !query}
           style={{ 
             padding: "14px 32px", borderRadius: "16px", border: "none",
-            background: theme.accent, color: "#000", fontWeight: 800, cursor: "pointer",
-            boxShadow: `0 8px 24px ${theme.accent}44`
+            background: (loading || !query) ? theme.card : theme.accent, 
+            color: "#000", fontWeight: 800, cursor: (loading || !query) ? "default" : "pointer",
+            boxShadow: (loading || !query) ? "none" : `0 8px 24px ${theme.accent}44`,
+            transition: "all 0.2s"
           }}
         >
           Explorar
@@ -148,10 +164,16 @@ export const StoreView: React.FC<StoreViewProps> = ({ onClose }) => {
       {/* Content Area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "40px 64px 80px" }}>
         
-        {loading && !featured.length ? (
+        {loading && !featured.length && !results.length ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, marginTop: 100 }}>
-            <RefreshCw size={56} style={{ animation: "spin 2s linear infinite", color: theme.accent }} />
-            <div style={{ color: theme.textMuted, fontSize: 20, fontWeight: 800 }}>SINCRONIZANDO REPOSITÓRIOS...</div>
+            <div style={{ position: "relative" }}>
+               <RefreshCw size={64} style={{ animation: "spin 3s linear infinite", color: theme.accent, opacity: 0.2 }} />
+               <ShoppingBag size={32} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: theme.accent }} />
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ color: theme.text, fontSize: 22, fontWeight: 900, letterSpacing: "-0.02em" }}>SINCRONIZANDO REPOSITÓRIOS</div>
+              <div style={{ color: theme.textMuted, fontSize: 14, fontWeight: 700, marginTop: 4 }}>ISSO PODE LEVAR ALGUNS SEGUNDOS...</div>
+            </div>
           </div>
         ) : query && results.length > 0 ? (
           /* Search Results View */
@@ -165,16 +187,24 @@ export const StoreView: React.FC<StoreViewProps> = ({ onClose }) => {
           /* Featured & Categories View */
           <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>
             {/* Featured Row */}
-            <div>
-              <SectionTitle icon={Star} label="Destaques da Semana" color={theme.yellow || "#fbbf24"} />
-              <div style={{ display: "flex", gap: 24, overflowX: "auto", padding: "8px 0 24px", scrollbarWidth: "none" }}>
-                {featured.slice(0, 4).map(item => (
-                  <motion.div key={item.id} whileHover={{ y: -8 }} style={{ flex: "0 0 380px" }}>
-                    <AppStoreCard item={item} theme={theme} onInstall={() => install(item)} installing={installing === item.id} large />
-                  </motion.div>
-                ))}
+            {featured.length > 0 ? (
+              <div>
+                <SectionTitle icon={Star} label="Destaques da Semana" color={theme.yellow || "#fbbf24"} />
+                <div style={{ display: "flex", gap: 24, overflowX: "auto", padding: "8px 0 24px", scrollbarWidth: "none" }}>
+                  {featured.slice(0, 4).map(item => (
+                    <motion.div key={item.id} whileHover={{ y: -8 }} style={{ flex: "0 0 380px" }}>
+                      <AppStoreCard item={item} theme={theme} onInstall={() => install(item)} installing={installing === item.id} large />
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : !loading && (
+              <div style={{ textAlign: "center", padding: "60px 0", background: "rgba(255,255,255,0.02)", borderRadius: 32, border: `1px dashed ${theme.border}` }}>
+                <ShoppingBag size={48} style={{ color: theme.textMuted, marginBottom: 16, opacity: 0.5 }} />
+                <div style={{ color: theme.textDim, fontSize: 20, fontWeight: 800 }}>Nenhum app em destaque</div>
+                <button onClick={fetchFeatured} style={{ marginTop: 16, background: theme.accent, border: "none", padding: "10px 20px", borderRadius: 12, fontWeight: 800, cursor: "pointer" }}>Tentar Novamente</button>
+              </div>
+            )}
 
             {/* Category Sections */}
             {categories.map(cat => {
@@ -196,7 +226,8 @@ export const StoreView: React.FC<StoreViewProps> = ({ onClose }) => {
           <div style={{ textAlign: "center", marginTop: 100, color: theme.textMuted }}>
             <ShoppingBag size={80} style={{ opacity: 0.1, marginBottom: 24 }} />
             <div style={{ fontSize: 26, fontWeight: 800, color: theme.textDim }}>Nenhum app encontrado</div>
-            <div style={{ fontSize: 16, marginTop: 8 }}>Tente outro termo ou verifique se o Flatpak está instalado.</div>
+            <div style={{ fontSize: 16, marginTop: 8 }}>Tente outro termo ou verifique se o Flatpak está instalado e configurado corretamente.</div>
+            <button onClick={search} style={{ marginTop: 24, background: "rgba(255,255,255,0.1)", border: `1px solid ${theme.border}`, color: theme.text, padding: "12px 24px", borderRadius: 14, fontWeight: 800, cursor: "pointer" }}>Tentar Novamente</button>
           </div>
         )}
       </div>

@@ -51,23 +51,64 @@ const ThemeStyle: React.FC<{ theme: any }> = ({ theme: T }) => (
     @keyframes blink {0%,100%{opacity:1}50%{opacity:0}}
     ::-webkit-scrollbar{width:0;height:0;}
     
-    .app-container { width: 100vw; height: 100vh; background: transparent; color: var(--text); display: flex; flex-direction: column; overflow: hidden; }
-    .top-bar { display: flex; align-items: center; gap: 16px; padding: 0 48px; height: 68px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg,var(--surface),transparent); flex-shrink: 0; }
-    .search-container { flex: 0 0 280px; }
-    .hero-container { position: relative; height: 240px; overflow: hidden; flex-shrink: 0; }
-    .hero-content { position: relative; height: 100%; display: flex; align-items: center; gap: 36px; padding: 0 56px; }
-    .hero-icon { width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .hero-title { font-size: 52px; font-weight: 900; color: var(--text); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.02em; }
-    .content-area { flex: 1; overflow-y: auto; padding-top: 8px; padding-bottom: 32px; }
-    .bottom-bar { display: flex; align-items: center; gap: 16px; padding: 8px 48px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; flex-wrap: wrap; }
+    .app-container { 
+      width: 100vw; 
+      height: 100vh; 
+      background: transparent; 
+      color: var(--text); 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+      position: relative;
+    }
+    .top-bar { 
+      display: flex; 
+      align-items: center; 
+      gap: 16px; 
+      padding: 0 48px; 
+      height: 80px; 
+      border-bottom: 1px solid var(--border); 
+      background: linear-gradient(180deg, var(--surface), transparent); 
+      flex-shrink: 0; 
+      z-index: 100;
+    }
+    .search-container { flex: 0 1 320px; }
+    .hero-container { position: relative; height: 260px; overflow: hidden; flex-shrink: 0; }
+    .hero-content { position: relative; height: 100%; display: flex; align-items: center; gap: 48px; padding: 0 64px; }
+    .hero-icon { width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hero-title { font-size: 56px; font-weight: 900; color: var(--text); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.03em; }
+    .content-area { 
+      flex: 1; 
+      overflow-y: auto; 
+      padding-top: 24px; 
+      padding-bottom: 40px; 
+      scroll-behavior: smooth;
+    }
+    .bottom-bar { 
+      display: flex; 
+      align-items: center; 
+      gap: 16px; 
+      padding: 12px 48px; 
+      border-top: 1px solid var(--border); 
+      background: var(--surface); 
+      flex-shrink: 0; 
+    }
     
+    @media (max-width: 1280px) {
+      .top-bar { padding: 0 24px; height: 72px; }
+      .hero-content { padding: 0 32px; gap: 24px; }
+      .hero-title { font-size: 40px; }
+      .hero-icon { width: 100px; height: 100px; }
+    }
+
     @media (max-width: 1024px) {
       .top-bar { flex-wrap: wrap; height: auto; padding: 16px 24px; gap: 12px; }
       .search-container { flex: 1 1 100%; order: 10; margin-top: 8px; }
-      .hero-content { padding: 0 24px; gap: 20px; }
+      .hero-container { height: 200px; }
+      .hero-content { padding: 0 24px; gap: 16px; }
       .hero-icon { width: 80px; height: 80px; }
-      .hero-title { font-size: 36px; }
-      .content-area { padding-bottom: 80px; }
+      .hero-title { font-size: 32px; }
+      .content-area { padding-bottom: 100px; }
       .bottom-bar { padding: 16px 24px; }
     }
   `}</style>

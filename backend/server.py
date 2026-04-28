@@ -30,13 +30,26 @@ from functools import lru_cache
 
 def get_local_ip():
     try:
+        # Try connecting to a public IP to find the default route interface
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.1)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
         return ip
-    except:
-        return "127.0.0.1"
+    except Exception:
+        try:
+            # Fallback for offline or restricted environments
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("10.255.255.255", 1))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            try:
+                return socket.gethostbyname(socket.gethostname())
+            except:
+                return "127.0.0.1"
 
 app = Flask(__name__, static_folder='../dist', static_url_path='/')
 CORS(app)
