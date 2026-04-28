@@ -22,7 +22,7 @@ Endpoints:
   POST /api/terminal
   POST /api/reboot
 """
-import subprocess, json, os, glob, configparser, time, threading, socket, psutil
+import subprocess, json, os, glob, configparser, time, threading, socket, psutil, requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -355,7 +355,22 @@ def apply_update():
     return jsonify({'ok': True, 'msg': 'Atualização iniciada em background'})
 
 
-# ── Store System (Flatpak) ────────────────────────────────────────
+# ── Store System (Flatpak & Snap) ─────────────────────────────────
+FEATURED_APPS = [
+    {"id": "com.spotify.Client", "name": "Spotify", "description": "Música para todos.", "category": "Mídia", "source": "flatpak", "icon": "spotify"},
+    {"id": "com.discordapp.Discord", "name": "Discord", "description": "Chat para gamers.", "category": "Social", "source": "flatpak", "icon": "discord"},
+    {"id": "com.valvesoftware.Steam", "name": "Steam", "description": "A melhor plataforma de jogos.", "category": "Jogos", "source": "flatpak", "icon": "steam"},
+    {"id": "org.videolan.VLC", "name": "VLC", "description": "O reprodutor de mídia universal.", "category": "Mídia", "source": "flatpak", "icon": "vlc"},
+    {"id": "com.visualstudio.code", "name": "VS Code", "description": "Editor de código profissional.", "category": "Desenvolvimento", "source": "flatpak", "icon": "vscode"},
+    {"id": "org.mozilla.firefox", "name": "Firefox", "description": "Navegador web livre e aberto.", "category": "Internet", "source": "flatpak", "icon": "firefox"},
+    {"id": "org.retroarch.RetroArch", "name": "RetroArch", "description": "Emulador de consoles clássicos.", "category": "Jogos", "source": "flatpak", "icon": "retroarch"},
+    {"id": "com.obsproject.Studio", "name": "OBS Studio", "description": "Gravação e streaming profissional.", "category": "Vídeo", "source": "flatpak", "icon": "obs"},
+]
+
+@app.route('/api/store/featured')
+def store_featured():
+    return jsonify(FEATURED_APPS)
+
 @app.route('/api/store/search')
 def store_search():
     query = request.args.get('q', '')
@@ -381,11 +396,18 @@ def store_search():
 
 @app.route('/api/store/install', methods=['POST'])
 def store_install():
-    app_id = (request.json or {}).get('id')
+    d = request.json or {}
+    app_id = d.get('id')
+    source = d.get('source', 'flatpak')
     if not app_id: return jsonify({'error': 'no id'}), 400
     
-    # Instala sem perguntar (-y)
-    r = run(f'flatpak install -y flathub {app_id}')
+    if source == 'flatpak':
+        r = run(f'flatpak install -y flathub {app_id}')
+    elif source == 'snap':
+        r = run(f'sudo snap install {app_id}')
+    else:
+        return jsonify({'error': 'Unknown source'}), 400
+
     if r.returncode != 0:
         return jsonify({'error': 'Install failed', 'details': r.stderr}), 500
     return jsonify({'ok': True})
