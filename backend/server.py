@@ -258,43 +258,101 @@ def scan_apps():
 
 
 # ── Update System ────────────────────────────────────────────────
+INSTALL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # /opt/martinos
+update_log = []
+update_status = "idle"  # idle | running | done | error
+
 @app.route('/api/update/check')
 def check_update():
     try:
-        # Fetch remote changes
         run('git fetch origin main')
         local = run('git rev-parse HEAD').stdout.strip()
         remote = run('git rev-parse origin/main').stdout.strip()
-        
         has_update = local != remote
-        
-        # Get last commit message for context
         msg = run('git log -1 --pretty=%B origin/main').stdout.strip()
-        
+        # Get list of changed files for smart restart decision
+        changed = []
+        if has_update:
+            r = run(f'git diff --name-only HEAD origin/main')
+            changed = r.stdout.strip().splitlines() if r and r.stdout else []
         return jsonify({
             'hasUpdate': has_update,
             'local': local[:7],
             'remote': remote[:7],
-            'message': msg
+            'message': msg,
+            'changedFiles': changed
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/update/status')
+def update_status_route():
+    return jsonify({'status': update_status, 'log': update_log[-20:]})
+
 @app.route('/api/update/apply', methods=['POST'])
 def apply_update():
-    try:
-        # Reset local changes to ensure clean pull (CAUTION: user changes lost)
-        # run('git reset --hard HEAD') 
-        r = run('git pull origin main')
-        if r.returncode != 0:
-            return jsonify({'error': 'Pull failed', 'details': r.stderr}), 500
-        
-        # Check if package.json changed
-        # (This is a simplified check, ideally we compare hashes)
-        
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    global update_log, update_status
+    update_log = []
+    update_status = "running"
+
+    def _log(msg):
+        update_log.append(msg)
+        socketio.emit('sys_update_log', {'msg': msg})
+
+    def do_update():
+        global update_status
+        try:
+            _log("🔄 Buscando commits do GitHub...")
+            r = run('git fetch origin main')
+
+            # Check which files changed
+            changed_r = run('git diff --name-only HEAD origin/main')
+            changed = changed_r.stdout.strip().splitlines() if changed_r and changed_r.stdout else []
+            backend_changed = any('backend/' in f or f == 'requirements.txt' for f in changed)
+            frontend_changed = any(f.startswith('src/') or f in ('package.json', 'vite.config.ts', 'index.html') for f in changed)
+
+            _log(f"📂 Arquivos alterados: {', '.join(changed) if changed else 'nenhum'}")
+
+            _log("⬇️ Aplicando atualizações (git pull)...")
+            r = run('git pull origin main')
+            if r.returncode != 0:
+                _log(f"❌ git pull falhou: {r.stderr}")
+                update_status = "error"
+                socketio.emit('sys_update_done', {'ok': False})
+                return
+
+            if frontend_changed:
+                _log("📦 Instalando dependências npm...")
+                r = run('npm install --legacy-peer-deps', cwd=INSTALL_DIR)
+                _log("🔨 Reconstruindo frontend (npm build)...")
+                r = run('npm run build', cwd=INSTALL_DIR)
+                if r.returncode != 0:
+                    _log(f"❌ Build falhou: {r.stderr}")
+                    update_status = "error"
+                    socketio.emit('sys_update_done', {'ok': False})
+                    return
+                _log("✅ Frontend reconstruído com sucesso!")
+
+            if backend_changed:
+                _log("🐍 Backend modificado - reiniciando serviço...")
+                run('pip install -r requirements.txt')
+                # Schedule backend restart after response
+                def restart_backend():
+                    time.sleep(1)
+                    run('systemctl restart martinos-backend')
+                threading.Thread(target=restart_backend, daemon=True).start()
+
+            _log("🚀 Enviando sinal de reload para o frontend...")
+            update_status = "done"
+            socketio.emit('sys_update_done', {'ok': True, 'backendRestart': backend_changed})
+
+        except Exception as e:
+            _log(f"❌ Erro inesperado: {str(e)}")
+            update_status = "error"
+            socketio.emit('sys_update_done', {'ok': False})
+
+    threading.Thread(target=do_update, daemon=True).start()
+    return jsonify({'ok': True, 'msg': 'Atualização iniciada em background'})
 
 
 # ── Store System (Flatpak) ────────────────────────────────────────
@@ -527,6 +585,7 @@ def handle_connect():
     print('Client connected')
     emit('sys_volume', last_vol)
     emit('sys_docker', last_docker)
+    emit('sys_update_status', {'status': update_status})
 
 
 if __name__ == '__main__':
