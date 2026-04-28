@@ -27,9 +27,8 @@ import { HeroPanel } from "./components/HeroPanel";
 import { CategoryRow } from "./components/CategoryRow";
 import { Screensaver } from "./components/Screensaver";
 import { WebAppViewer } from "./components/WebAppViewer";
-import { AddAppModal } from "./components/Modals/AddAppModal";
 import { EditModal } from "./components/Modals/EditModal";
-import { AddWebAppModal } from "./components/Modals/AddWebAppModal";
+import { UnifiedAddModal } from "./components/Modals/UnifiedAddModal";
 import { ScanPickerModal } from "./components/Modals/ScanPickerModal";
 import { ControllerConfig } from "./components/Modals/ControllerConfig";
 import { ButtonHUD } from "./components/HUD/ButtonHUD";
@@ -114,8 +113,7 @@ export default function App() {
   const { playSound } = useSound();
 
   const [editingApp, setEditing] = useState<AppEntry | null>(null);
-  const [addingApp, setAdding] = useState(false);
-  const [addingWebApp, setAddingWebApp] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [activeWebApp, setActiveWebApp] = useState<AppEntry | null>(null);
   const [launchToast, setToast] = useState<AppEntry | null>(null);
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "done">("idle");
@@ -336,7 +334,7 @@ export default function App() {
       case "edit_app": if (app) setEditing(app); break;
       case "pin_app": if (app) updateApp({ ...app, pinned: !app.pinned }); break;
       case "remove_app": if (app) { useLauncherStore.getState().removeApp(app.id); setFocus(fr, Math.max(fc - 1, 0)); } break;
-      case "add_app": setAdding(true); break;
+      case "add_app": setShowAdd(true); break;
       case "minimize": setMinimized(true); break;
       case "scan_apps": runScan(); break;
       case "open_settings": setShowQuickSettings(true); break;
@@ -400,7 +398,7 @@ export default function App() {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       useLauncherStore.getState().setInputMode("keyboard");
-      if (editingApp || addingApp || addingWebApp || showCtrl || activeWebApp) return;
+      if (editingApp || showAdd || showCtrl || activeWebApp) return;
       const btn = BUTTONS.find(b => b.key === e.key);
       if (!btn) return;
       const actionId = mapping[btn.id];
@@ -411,7 +409,8 @@ export default function App() {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [mapping, execAction, editingApp, addingApp, addingWebApp, showCtrl, activeWebApp]);
+  }, [mapping, execAction, editingApp, showAdd, showCtrl, activeWebApp]);
+
 
   useGamepad(execAction, mapping, showHud);
 
@@ -535,7 +534,6 @@ export default function App() {
 
           {[
             [RefreshCw, runScan, scanStatus === "scanning", "Escanear"],
-            [Plus, () => setAdding(true), false, "Adicionar"],
             [Gamepad2, () => setShowCtrl(true), false, "Controle"],
             [Monitor, () => setMinimized(true), false, "Desktop"],
           ].map(([Icon, fn, spin, title]: any) => (
@@ -552,14 +550,17 @@ export default function App() {
             </motion.button>
           ))}
 
+          {/* Unified Add Button */}
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: .94 }}
-            onClick={() => setAddingWebApp(true)}
+            onClick={() => setShowAdd(true)}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10,
-              border: "1px solid #34d39966", background: "linear-gradient(135deg,#022c22,#065f46)",
-              color: "#34d399", cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: "'Outfit',sans-serif"
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 10,
+              border: "none",
+              background: `linear-gradient(135deg, ${theme.accentDim}, ${theme.accent})`,
+              color: "#fff", cursor: "pointer", fontWeight: 800, fontSize: 14, fontFamily: "'Outfit',sans-serif",
+              boxShadow: `0 4px 14px ${theme.accent}44`
             }}>
-            🌐 Web App
+            <Plus size={16} /> Adicionar
           </motion.button>
 
           <motion.button
@@ -695,8 +696,7 @@ export default function App() {
         {showUpdate && <UpdateModal onClose={() => setShowUpdate(false)} />}
         {showSystemSettings && <SystemSettings onClose={() => setShowSystemSettings(false)} />}
         {editingApp && <EditModal app={editingApp} onSave={handleSave} onClose={() => setEditing(null)} />}
-        {addingApp && <AddAppModal onAdd={handleAdd} onClose={() => setAdding(false)} />}
-        {addingWebApp && <AddWebAppModal onAdd={handleAddWeb} onClose={() => setAddingWebApp(false)} />}
+        {showAdd && <UnifiedAddModal onAdd={n => { addApp(n); setShowAdd(false); }} onClose={() => setShowAdd(false)} />}
         {launchToast && <LaunchToast app={launchToast} onClose={() => setToast(null)} />}
         {showCtrl && <ControllerConfig mapping={mapping} onSave={m => { setMapping(m); setShowCtrl(false); }} onClose={() => setShowCtrl(false)} />}
         {activeWebApp && <WebAppViewer app={activeWebApp} mapping={mapping} onClose={() => setActiveWebApp(null)} onAction={(btnId, actionId) => showHud(btnId, actionId)} />}
@@ -720,6 +720,4 @@ export default function App() {
   );
 
   function handleSave(u: AppEntry) { updateApp(u); setEditing(null); }
-  function handleAdd(n: AppEntry) { addApp(n); setAdding(false); }
-  function handleAddWeb(n: AppEntry) { addApp(n); setAddingWebApp(false); }
 }
